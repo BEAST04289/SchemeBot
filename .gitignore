@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+venv/
+.venv/
+
+# Environment
+.env
+*.env.local
+
+# Logs (keep .gitkeep, ignore actual logs)
+backend/logs/*.jsonl
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ChromaDB local data
+chromadb_data/
+
+# Node (frontend)
+node_modules/
+.next/
+out/
+
+# Antigravity
+.antigravity/
+
+*.db

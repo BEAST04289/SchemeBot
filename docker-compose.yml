@@ -1,0 +1,27 @@
+version: "3.9"
+
+# GrantBot Local Development — ChromaDB is optional (see backend/config.py).
+# Run this only if you want RAG-quality matching; the system works fine
+# without it, falling back to rule-based matching over the seed schemes.
+#
+# Usage: docker-compose up -d chromadb
+# Then:  cd backend && uvicorn main:app --reload --port 8000
+
+services:
+  chromadb:
+    image: chromadb/chroma:latest
+    ports:
+      - "8001:8000"
+    volumes:
+      - chromadb_data:/chroma/chroma
+    environment:
+      - ANONYMIZED_TELEMETRY=False
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  chromadb_data:
+    driver: local
