@@ -71,8 +71,3 @@ See `docs/SYSTEM_ARCHITECTURE.md` for the full design.
 | Green | `#138808` | Success, accent |
 | Font | Inter + Noto Sans Devanagari | |
 
-## XPRIZE Evidence
-
-Every agent decision is logged. View the evidence summary at:
-- Local: http://localhost:8000/stats
-- Detailed: http://localhost:8000/api/impact/summary
