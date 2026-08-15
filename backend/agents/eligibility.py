@@ -146,13 +146,16 @@ def intake_node(state: AgentState) -> AgentState:
 
     # ── WhatsApp mode: incremental extraction ──────────────────────────────
     
-    if state.get("normalized_profile"):
-        logger.info(f"Using cached profile for {state['session_id']}, skipping Gemini extraction.")
+    cached_profile = state.get("normalized_profile")
+    if cached_profile and cached_profile.get("profile_complete"):
+        logger.info(f"Using cached COMPLETE profile for {state['session_id']}, skipping Gemini extraction.")
         return {
             **state,
             "needs_more_info": False,
             "missing_fields": []
         }
+    elif cached_profile:
+        logger.info(f"Cached profile for {state['session_id']} is incomplete — re-extracting with Gemini.")
         
     conversation = state.get("conversation_history") or []
     conv_text = "\n".join(f"{m['role'].upper()}: {m['content']}" for m in conversation)
@@ -296,14 +299,19 @@ def _match_via_chromadb(profile: dict) -> list[dict]:
 
 def _match_via_seed_fallback(profile: dict) -> list[dict]:
     """Pure rule-based path when ChromaDB isn't running. Same filter logic,
-    same result shape — callers never need to know which path executed."""
+    same result shape — callers never need to know which path executed.
+    
+    NOTE: Every scheme that passes the hard filter is included, even with
+    score 0 — the hard filter already guarantees basic eligibility. The
+    soft score only ranks within that set. Filtering on score > 0 was a
+    bug that silently excluded valid schemes for users whose profile
+    didn't trigger any bonus conditions (e.g., salaried workers)."""
     candidates = []
     for scheme in _SEED_SCHEMES:
         if not _hard_filter_pass(scheme, profile):
             continue
         score = _soft_score(scheme, profile)
-        if score > 0:
-            candidates.append({**scheme, "_score": score})
+        candidates.append({**scheme, "_score": score})
     candidates.sort(key=lambda x: (x["_score"], x.get("annual_value", 0)), reverse=True)
     return candidates[:4]
 

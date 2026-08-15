@@ -24,8 +24,8 @@ from config import settings
 logger = logging.getLogger("grantbot.auth")
 
 EXCLUDED_PATHS = {
-    "/health", "/stats", "/api/auth/session", "/api/whatsapp/webhook",
-    "/api/refresh", "/docs", "/openapi.json",
+    "/health", "/stats", "/api/auth/session", "/api/auth/dev-login",
+    "/api/whatsapp/webhook", "/api/refresh", "/docs", "/openapi.json",
 }
 
 JWT_ALGORITHM = "HS256"

@@ -53,6 +53,39 @@ async def _verify_firebase_token(id_token: str) -> str | None:
         return None
 
 
+class DevLoginRequest(BaseModel):
+    model_config = ConfigDict(strict=True)
+    phone: str
+
+
+@router.post("/dev-login")
+async def dev_login(body: DevLoginRequest, response: Response):
+    """Dev-only login: accepts a plain phone number, skips Firebase/Turnstile.
+    Disabled in production — returns 404 so it's impossible to hit."""
+    if settings.is_production:
+        raise HTTPException(status_code=404, detail={"error": "Not found"})
+
+    cleaned = body.phone.strip().replace(" ", "")
+    if len(cleaned) != 10 or not cleaned.isdigit():
+        raise HTTPException(status_code=400, detail={
+            "error": "Please provide a valid 10-digit phone number", "code": "INVALID_PHONE",
+        })
+
+    phone_hash = hash_phone(f"+91{cleaned}")
+    session_jwt = create_session_jwt(phone_hash)
+
+    response.set_cookie(
+        key="grantbot_session",
+        value=session_jwt,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=7 * 24 * 3600,
+    )
+    logger.info(f"Dev login for phone hash ...{phone_hash[-6:]}")
+    return {"success": True}
+
+
 @router.post("/session")
 async def create_session(body: SessionRequest, response: Response):
     if not await _validate_turnstile(body.turnstile_token):
