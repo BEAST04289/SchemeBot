@@ -22,6 +22,8 @@ THREE RUN MODES (same code, different environment variables):
      configured or the app refuses to start. Fail loud at startup,
      not silently at 2am when a user hits a broken code path.
 """
+from __future__ import annotations
+
 
 import os
 import logging

@@ -5,6 +5,8 @@ Aggregates the four XPRIZE evidence logs into a structured summary
 for judges and the impact dashboard. This is the "show your work"
 endpoint — everything in here was logged by real agent decisions.
 """
+from __future__ import annotations
+
 
 import logging
 from datetime import datetime, timezone

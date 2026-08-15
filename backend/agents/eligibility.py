@@ -27,6 +27,8 @@ matching falls back to pure rule-based scoring over the seed JSON —
 same hard-filter logic, same result shape, just no vector search.
 The rest of the system never needs to know which path ran.
 """
+from __future__ import annotations
+
 
 import json
 import logging
@@ -434,6 +436,7 @@ def _format_matches(matches: list[dict]) -> list[dict]:
     return [{
         "scheme_id": m["id"],
         "name": m["name"],
+        "name_hi": m.get("name_hindi", m["name"]),
         "ministry": m.get("ministry", ""),
         "benefit_amount": m.get("benefit", ""),
         "documents_required": m.get("documents", []),

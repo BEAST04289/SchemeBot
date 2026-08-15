@@ -1,6 +1,6 @@
 fastapi==0.111.0
 uvicorn[standard]==0.30.1
-pydantic==2.7.1
+pydantic>=2.7.4
 langgraph==0.2.14
 chromadb==0.5.3
 google-generativeai==0.7.2

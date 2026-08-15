@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://YOUR_CLOUD_RUN_URL/api/:path*"
+    },
+    {
+      "source": "/stats",
+      "destination": "https://YOUR_CLOUD_RUN_URL/stats"
+    },
+    {
+      "source": "/health",
+      "destination": "https://YOUR_CLOUD_RUN_URL/health"
+    }
+  ]
+}

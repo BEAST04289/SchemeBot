@@ -3,6 +3,8 @@ POST /api/match — Web dashboard scheme matching endpoint.
 Uses the SAME eligibility agent as the WhatsApp bot (agents/eligibility.py).
 This route just packages a completed form into the shared AgentState.
 """
+from __future__ import annotations
+
 
 import asyncio
 import hashlib
@@ -95,3 +97,37 @@ async def match_schemes_endpoint(profile: UserProfile, request: Request):
         "trial_used": True,
         "reports_remaining": trial.get("reports_remaining", -1),
     }
+
+
+class ChatRequest(BaseModel):
+    model_config = ConfigDict(strict=True)
+    messages: list[dict]
+
+@router.post("/chat")
+async def chat_endpoint(chat_req: ChatRequest, request: Request):
+    phone_hash = getattr(request.state, "phone_hash", None)
+    if not phone_hash:
+        raise HTTPException(status_code=401, detail={"error": "Not authenticated", "code": "NO_SESSION"})
+        
+    from agents.eligibility import run_eligibility_agent_whatsapp
+    from db.firestore import get_conversation, save_conversation
+    
+    session_id = f"web_{phone_hash}"
+    
+    try:
+        # We replace the stored conversation with the one from the frontend to keep it stateless from the backend's perspective,
+        # or we just pass the frontend's conversation directly to the agent.
+        result = await run_eligibility_agent_whatsapp(session_id=session_id, conversation=chat_req.messages)
+        
+        reply = result["explanation_hi"] or result["explanation_en"] or ""
+        if result["explanation_hi"] and result["explanation_en"] and result["explanation_hi"] != result["explanation_en"]:
+            reply = f"{result['explanation_hi']}\n\n---\n\n{result['explanation_en']}"
+            
+        return {
+            "reply": reply,
+            "matches": result["matches"],
+            "messages": chat_req.messages + [{"role": "assistant", "content": reply}]
+        }
+    except Exception as e:
+        logger.exception(f"Web chat pipeline error: {e}")
+        raise HTTPException(status_code=503, detail={"error": "Chat is temporarily unavailable", "code": "AGENT_UNAVAILABLE"})

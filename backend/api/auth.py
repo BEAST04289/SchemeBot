@@ -4,9 +4,11 @@ Auth Routes
 POST /api/auth/session — exchanges a Firebase phone-OTP ID token plus a
 Cloudflare Turnstile token for a GrantBot session (httpOnly JWT cookie).
 """
+from __future__ import annotations
+
 
 import logging
-
+from typing import Optional
 import httpx
 from fastapi import APIRouter, Response, HTTPException
 from pydantic import BaseModel, ConfigDict
@@ -37,7 +39,7 @@ async def _validate_turnstile(token: str) -> bool:
     return resp.json().get("success", False)
 
 
-async def _verify_firebase_token(id_token: str) -> str | None:
+async def _verify_firebase_token(id_token: str) -> Optional[str]:
     """Verifies a Firebase ID token, returns the phone number or None.
     See middleware/auth.py docstring for why the dev fallback below
     cannot execute in production."""
@@ -73,4 +75,44 @@ async def create_session(body: SessionRequest, response: Response):
         samesite="lax",
         max_age=7 * 24 * 3600,
     )
+    return {"success": True}
+
+
+class DevLoginRequest(BaseModel):
+    model_config = ConfigDict(strict=True)
+    phone: str
+
+
+@router.post("/dev-login")
+async def dev_login(body: DevLoginRequest, response: Response):
+    """
+    Dev-only login — accepts any 10-digit phone, creates a real JWT session.
+    This endpoint is excluded from auth middleware and refuses to run in production.
+    For hackathon demo and local testing only.
+    """
+    if settings.is_production:
+        raise HTTPException(status_code=403, detail={"error": "Dev login disabled in production", "code": "DEV_ONLY"})
+
+    if not body.phone or len(body.phone.replace(" ", "").replace("+91", "")) < 10:
+        raise HTTPException(status_code=400, detail={"error": "Please provide a valid phone number", "code": "INVALID_PHONE"})
+
+    clean_phone = body.phone.replace(" ", "").replace("+91", "")[-10:]
+    phone_hash = hash_phone(f"+91{clean_phone}")
+    session_jwt = create_session_jwt(phone_hash)
+
+    response.set_cookie(
+        key="grantbot_session",
+        value=session_jwt,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=7 * 24 * 3600,
+    )
+    logger.info(f"Dev login created for phone ...{clean_phone[-4:]}")
+    return {"success": True, "mode": "dev"}
+
+
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie("grantbot_session")
     return {"success": True}

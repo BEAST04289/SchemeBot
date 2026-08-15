@@ -19,6 +19,8 @@ Two-tier router mounting below:
     extensions built via the Antigravity sessions in .antigravity/ —
     mounted only if present, so the core system runs without them.
 """
+from __future__ import annotations
+
 
 import logging
 import importlib

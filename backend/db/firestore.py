@@ -8,12 +8,16 @@ Every function has an IDENTICAL signature and return shape regardless
 of which backend is active. Callers (agents, API routes) never branch
 on HAS_FIRESTORE themselves — that logic lives here, once.
 """
+from __future__ import annotations
+
 
 import hashlib
 import time
 import json
 import sqlite3
 import asyncio
+import logging
+from typing import Any, Optional
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -101,7 +105,7 @@ def hash_phone(phone: str) -> str:
 
 # ── Profile Caching (For skipping Gemini extraction) ────────────────────────
 
-async def get_cached_profile(phone_hash: str) -> dict | None:
+async def get_cached_profile(phone_hash: str) -> Optional[dict]:
     """Returns the cached profile if it exists and is less than 7 days old."""
     if HAS_FIRESTORE:
         doc = db.collection("confirmed_profiles").document(phone_hash).get()
@@ -323,7 +327,7 @@ async def end_consult_session(phone_hash: str, consult_session_id: str) -> int:
 
 # ── Scheme Tracking (deadline reminders) ────────────────────────────────────
 
-async def track_scheme(phone_hash: str, scheme_id: str, deadline: str | None) -> None:
+async def track_scheme(phone_hash: str, scheme_id: str, deadline: Optional[str]) -> None:
     doc_id = f"{phone_hash}_{scheme_id}"
     created_at = datetime.now(timezone.utc).isoformat()
     

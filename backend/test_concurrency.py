@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import asyncio
+# pyrefly: ignore [missing-import]
 import httpx
 
 async def send_message(client, phone_suffix, message):

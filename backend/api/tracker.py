@@ -7,6 +7,8 @@ not_started → documents_collected → applied → approved/rejected
 This is XPRIZE evidence — seeing users progress from "discovered" to
 "approved" proves the tool drives real outcomes, not just information.
 """
+from __future__ import annotations
+
 
 import asyncio
 import logging

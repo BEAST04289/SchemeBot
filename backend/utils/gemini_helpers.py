@@ -8,10 +8,13 @@ logic, which is a real production risk: Gemini occasionally returns
 transient 429 (rate limit) or 503 (overloaded) errors, and without retry
 those show up as user-facing failures instead of a 1-2 second delay.
 """
+from __future__ import annotations
+
 
 import json
 import time
 import logging
+from typing import Optional
 
 logger = logging.getLogger("grantbot.gemini")
 
@@ -31,7 +34,7 @@ def generate_with_retry(model, prompt: str, max_retries: int = 2, base_delay: fl
     for non-retryable errors (bad API key, invalid request) — no point
     retrying those.
     """
-    last_error: Exception | None = None
+    last_error: Optional[Exception] = None
 
     for attempt in range(max_retries + 1):
         try:
@@ -56,7 +59,9 @@ def generate_with_retry(model, prompt: str, max_retries: int = 2, base_delay: fl
                 time.sleep(delay)
 
     logger.error(f"Gemini call failed after {max_retries + 1} attempts: {last_error}")
-    raise last_error
+    if last_error:
+        raise last_error
+    raise RuntimeError("generate_with_retry failed with no last_error")
 
 
 def parse_json_safely(text: str, fallback: dict) -> dict:
