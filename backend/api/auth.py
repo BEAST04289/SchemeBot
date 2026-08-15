@@ -4,9 +4,11 @@ Auth Routes
 POST /api/auth/session — exchanges a Firebase phone-OTP ID token plus a
 Cloudflare Turnstile token for a GrantBot session (httpOnly JWT cookie).
 """
+from __future__ import annotations
+
 
 import logging
-
+from typing import Optional
 import httpx
 from fastapi import APIRouter, Response, HTTPException
 from pydantic import BaseModel, ConfigDict
@@ -37,7 +39,7 @@ async def _validate_turnstile(token: str) -> bool:
     return resp.json().get("success", False)
 
 
-async def _verify_firebase_token(id_token: str) -> str | None:
+async def _verify_firebase_token(id_token: str) -> Optional[str]:
     """Verifies a Firebase ID token, returns the phone number or None.
     See middleware/auth.py docstring for why the dev fallback below
     cannot execute in production."""
@@ -107,3 +109,10 @@ async def create_session(body: SessionRequest, response: Response):
         max_age=7 * 24 * 3600,
     )
     return {"success": True}
+
+
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie("grantbot_session")
+    return {"success": True}
+

@@ -1,0 +1,40 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+:root {
+  --foreground-rgb: 0, 0, 80; /* Navy default text */
+  --background-start-rgb: 255, 255, 255;
+  --background-end-rgb: 255, 255, 255;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-start-rgb));
+  font-family: var(--font-inter), var(--font-noto-devanagari), sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Premium custom scrollbar matching the saffron brand */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+::-webkit-scrollbar-thumb {
+  background: #FF9933; /* Saffron */
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E07B16;
+}
+
+/* Custom utilities */
+.tricolour-bar {
+  height: 4px;
+  background: linear-gradient(to right, #FF9933 33.3%, #ffffff 33.3%, #ffffff 66.6%, #138808 66.6%);
+  width: 100%;
+}

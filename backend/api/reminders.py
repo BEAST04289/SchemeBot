@@ -5,8 +5,11 @@ Lets users save schemes they want to apply for with deadlines.
 The companion cron script (scripts/send_reminders.py) queries these
 and sends WhatsApp reminders before deadlines.
 """
+from __future__ import annotations
+
 
 import logging
+from typing import Optional
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
@@ -24,7 +27,7 @@ router = APIRouter()
 class SetReminderRequest(BaseModel):
     model_config = ConfigDict(strict=True)
     scheme_id: str
-    deadline: str | None = None  # ISO date string, e.g. "2026-12-31"
+    deadline: Optional[str] = None  # ISO date string, e.g. "2026-12-31"
 
 
 @router.post("/set")

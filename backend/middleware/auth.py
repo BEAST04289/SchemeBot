@@ -11,8 +11,11 @@ in _verify_firebase_token() is mathematically unreachable once deployed
 — not just discouraged, actually impossible to hit.
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 import jwt
 from fastapi import Request
@@ -25,7 +28,8 @@ logger = logging.getLogger("grantbot.auth")
 
 EXCLUDED_PATHS = {
     "/health", "/stats", "/api/auth/session", "/api/auth/dev-login",
-    "/api/whatsapp/webhook", "/api/refresh", "/docs", "/openapi.json",
+    "/api/auth/logout", "/api/whatsapp/webhook",
+    "/api/refresh", "/docs", "/openapi.json",
 }
 
 JWT_ALGORITHM = "HS256"
@@ -41,7 +45,8 @@ def create_session_jwt(phone_hash: str) -> str:
     return jwt.encode(payload, settings.jwt_secret, algorithm=JWT_ALGORITHM)
 
 
-def decode_session_jwt(token: str) -> dict | None:
+def decode_session_jwt(token: str) -> Optional[dict]:
+    """Decodes JWT and returns payload if valid, None otherwise."""
     try:
         return jwt.decode(token, settings.jwt_secret, algorithms=[JWT_ALGORITHM])
     except jwt.ExpiredSignatureError:

@@ -14,15 +14,19 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Create logs directory
-RUN mkdir -p logs
+# Create data and logs directories for persistence
+RUN mkdir -p data logs
 
-# Port Cloud Run expects
-EXPOSE 8080
+# Declare volumes for SQLite DB and JSONL evidence logs
+VOLUME ["/app/data", "/app/logs"]
 
-# Health check
+# Port is configurable: docker-compose sets 8000, Cloud Run sets 8080
+ENV PORT=8000
+EXPOSE ${PORT}
+
+# Health check uses the configurable port
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+    CMD curl -f http://localhost:${PORT}/health || exit 1
 
-# Run with uvicorn — Cloud Run sets PORT env var
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "2"]
+# Run with uvicorn — reads PORT from environment
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT} --workers 2

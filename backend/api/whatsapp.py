@@ -5,6 +5,8 @@ Twilio (Sandbox for dev, Business API for prod) POSTs every incoming
 WhatsApp message here. This calls the exact same eligibility agent as
 the web dashboard — see agents/eligibility.py for why that matters.
 """
+from __future__ import annotations
+
 
 import asyncio
 import logging

@@ -9,6 +9,8 @@ so migrating to BigQuery later is a `bq load` command, not a code change.
 Call log_event() via asyncio.create_task() from API routes so logging
 never blocks the response the user is waiting on.
 """
+from __future__ import annotations
+
 
 import json
 import os

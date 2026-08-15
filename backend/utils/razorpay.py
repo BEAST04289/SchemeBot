@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Razorpay Payment Utility
 =========================
@@ -15,6 +17,7 @@ that an attacker can use to guess the correct value byte by byte.
 import hmac
 import hashlib
 import logging
+from typing import Optional
 
 import razorpay
 
@@ -41,9 +44,9 @@ TIER_PRICING_PAISE = {
 }
 
 
-async def create_order(tier: str, receipt: str, notes: dict | None = None) -> dict:
+async def create_order(tier: str, receipt: str, notes: Optional[dict] = None) -> dict:
     """
-    Creates a Razorpay order for a standard tier, or a custom amount
+    Creates a new Razorpay order. for a standard tier, or a custom amount
     (used for metered consultation billing — pass amount_paise in notes).
     """
     client = _get_client()
@@ -68,7 +71,7 @@ def verify_payment_signature(order_id: str, payment_id: str, signature: str) -> 
     if not HAS_RAZORPAY:
         return False
     message = f"{order_id}|{payment_id}"
-    expected = hmac.new(
+    expected = hmac.HMAC(
         settings.razorpay_key_secret.encode(), message.encode(), hashlib.sha256
     ).hexdigest()
     return hmac.compare_digest(expected, signature)

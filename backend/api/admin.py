@@ -5,6 +5,8 @@ Requires tier="ngo" — regular users cannot access these.
 Provides bulk client management and aggregated impact stats
 for NGO partners who use GrantBot to serve their beneficiaries.
 """
+from __future__ import annotations
+
 
 import asyncio
 import logging
