@@ -49,12 +49,12 @@ if HAS_GEMINI:
     genai.configure(api_key=settings.gemini_api_key)
 
 FLASH_JSON = genai.GenerativeModel(
-    "gemini-2.5-flash",
+    "gemini-3.5-flash-lite",
     generation_config=genai.GenerationConfig(temperature=0.1, response_mime_type="application/json"),
 ) if HAS_GEMINI else None
 
 FLASH = genai.GenerativeModel(
-    "gemini-2.5-flash",
+    "gemini-3.5-flash-lite",
     generation_config=genai.GenerationConfig(temperature=0.4, max_output_tokens=800),
 ) if HAS_GEMINI else None
 
@@ -360,20 +360,16 @@ def explain_node(state: AgentState) -> AgentState:
             return {**state, "explanation_hi": f"कृपया बताएं: {', '.join(missing)}",
                     "explanation_en": f"Please tell us: {', '.join(missing)}"}
         try:
-            hi = generate_with_retry(
-                FLASH,
+            prompt = (
                 f"Tone: {tone}. Ask warmly for: {', '.join(missing)}. "
                 f"Explain briefly why (to find the right government schemes). "
-                f"Under 60 words. Reply ONLY in Hindi (Devanagari script).",
-                max_retries=1,
+                f"Under 60 words. "
+                f"Return ONLY a JSON object with two keys: 'hi' (Hindi translation in Devanagari) and 'en' (English text)."
             )
-            en = generate_with_retry(
-                FLASH,
-                f"Tone: {tone}. Ask warmly for: {', '.join(missing)}. "
-                f"Explain briefly why (to find the right government schemes). "
-                f"Under 60 words. Reply ONLY in English.",
-                max_retries=1,
-            )
+            raw = generate_with_retry(FLASH_JSON, prompt, max_retries=1)
+            parsed = parse_json_safely(raw, fallback={"hi": f"कृपया बताएं: {', '.join(missing)}", "en": f"Please tell us: {', '.join(missing)}"})
+            hi = parsed.get("hi", f"कृपया बताएं: {', '.join(missing)}")
+            en = parsed.get("en", f"Please tell us: {', '.join(missing)}")
         except Exception as e:
             logger.error(f"Follow-up question generation failed: {e}")
             hi = f"कृपया बताएं: {', '.join(missing)}"
@@ -412,10 +408,13 @@ Total potential value: Rs {total_value:,}
 Write a message that: opens with the total value as a hook, lists each
 scheme with its ONE key document, says which scheme to apply for FIRST
 and why, ends by offering help with the application. Under 250 words.
+Return ONLY a JSON object with two keys: 'hi' (Hindi translation in Devanagari) and 'en' (English text).
 """
     try:
-        hi = generate_with_retry(FLASH, base + "\nReply ONLY in Hindi (Devanagari script).", max_retries=2)
-        en = generate_with_retry(FLASH, base + "\nReply ONLY in English.", max_retries=2)
+        raw = generate_with_retry(FLASH_JSON, base, max_retries=2)
+        parsed = parse_json_safely(raw, fallback={"hi": schemes_block, "en": schemes_block})
+        hi = parsed.get("hi", schemes_block)
+        en = parsed.get("en", schemes_block)
     except Exception as e:
         logger.error(f"Explanation generation failed for session {state['session_id']}: {e}")
         hi = en = f"Schemes found:\n{schemes_block}"

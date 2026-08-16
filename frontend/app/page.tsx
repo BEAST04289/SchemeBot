@@ -103,15 +103,18 @@ export default function Home() {
               {t.cta_start}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
-            <a
-              href="https://wa.me/918080808080"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-6 py-3 bg-white border border-slate-200 text-navy font-semibold rounded-xl hover:bg-slate-50 transition-colors"
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                alert(language === 'hi' 
+                  ? 'WhatsApp बॉट अभी विकास (Twilio Sandbox) मोड में है।' 
+                  : 'WhatsApp integration is currently in development (Twilio Sandbox) mode.');
+              }}
+              className="inline-flex items-center justify-center px-6 py-3 bg-white border border-slate-200 text-navy font-semibold rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
             >
               <MessageCircle className="w-4 h-4 mr-2 text-tricolorgreen" />
               {t.cta_whatsapp}
-            </a>
+            </button>
           </div>
         </div>
       </section>

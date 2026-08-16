@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { 
   MessageSquare, UserCircle, Calendar, LineChart, LogOut, Send, 
   Trash2, RefreshCw, Layers, Sparkles, Landmark as GovernmentIcon, ArrowRight, Languages, Check,
-  Menu, X, HelpCircle, AlertTriangle, ShieldCheck, HeartHandshake, Eye, Award, CheckCircle2, ChevronRight, Phone, Search
+  Menu, X, HelpCircle, AlertTriangle, ShieldCheck, HeartHandshake, Eye, Award, CheckCircle2, ChevronRight, Phone, Search, UploadCloud
 } from 'lucide-react';
 import SchemeCard, { Scheme } from '@/components/scheme/SchemeCard';
 import PaywallModal from '@/components/scheme/PaywallModal';
@@ -87,11 +87,11 @@ export default function Dashboard() {
 
   // Profile Form States (Image 1)
   const [profileName, setProfileName] = useState('');
-  const [profileEmail, setProfileEmail] = useState('ram.k@example.com');
-  const [profilePhone, setProfilePhone] = useState('+91 9876543210');
-  const [profileDob, setProfileDob] = useState('1995-05-18');
-  const [profileGender, setProfileGender] = useState('Male');
-  const [profileAddress, setProfileAddress] = useState('123, Maple Street, Cityville, Uttar Pradesh, 201001');
+  const [profileEmail, setProfileEmail] = useState('');
+  const [profilePhone, setProfilePhone] = useState('');
+  const [profileDob, setProfileDob] = useState('');
+  const [profileGender, setProfileGender] = useState('');
+  const [profileAddress, setProfileAddress] = useState('');
 
   // Direct Eligibility Checker Form State
   const [formAge, setFormAge] = useState<number | ''>('');
@@ -100,20 +100,34 @@ export default function Dashboard() {
   const [formIncome, setFormIncome] = useState<number | ''>('');
   const [formCategory, setFormCategory] = useState('');
   const [formAadhaar, setFormAadhaar] = useState<boolean>(true);
+  const [formAadhaarNumber, setFormAadhaarNumber] = useState('');
+  const [aadhaarStatus, setAadhaarStatus] = useState<'idle' | 'otp_sent' | 'verified'>('idle');
+  const [aadhaarOtp, setAadhaarOtp] = useState('');
   const [stateSearch, setStateSearch] = useState('');
 
   // Quiz States (Image 7)
   const [quizStep, setQuizStep] = useState(1);
   const [quizState, setQuizState] = useState('');
+  const [appStep, setAppStep] = useState(1);
 
   // Checkout Promos & Options (Image 5)
   const [checkoutPromo, setCheckoutPromo] = useState('SARTHI20');
   const [paymentTab, setPaymentTab] = useState<'card' | 'upi' | 'banking' | 'wallet'>('card');
-  const [cardNumber, setCardNumber] = useState('4420 5839 2019 3920');
+  const [cardNumber, setCardNumber] = useState('');
 
   // Selected Scheme Detail View State (Image 10)
   const [selectedScheme, setSelectedScheme] = useState<Scheme | null>(null);
   const [successSchemeName, setSuccessSchemeName] = useState('');
+  const [successReferenceId, setSuccessReferenceId] = useState('SK-2024-10-12345');
+  const [successDate, setSuccessDate] = useState('15 Oct 2024');
+
+  useEffect(() => {
+    const date = new Date();
+    const formattedDate = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+    const randomId = Math.floor(10000 + Math.random() * 90000);
+    setSuccessDate(formattedDate);
+    setSuccessReferenceId(`SK-${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${randomId}`);
+  }, []);
 
   // Paywall & Billing State
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
@@ -134,6 +148,15 @@ export default function Dashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const tl = (hi: string, en: string) => language === 'hi' ? hi : en;
+
+  // Toast notification state
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const getSchemeDetails = (schemeId: string): Scheme => {
     const seed = schemesData.find((s: any) => s.id === schemeId);
     if (seed) {
@@ -146,7 +169,7 @@ export default function Dashboard() {
         documents_required: seed.documents || [],
         application_url: seed.apply_url || '',
         annual_value: seed.annual_value || 0,
-        confidence_score: 0,
+        confidence_score: 100,
       };
     }
     return {
@@ -158,7 +181,7 @@ export default function Dashboard() {
       documents_required: [],
       application_url: '',
       annual_value: 0,
-      confidence_score: 0,
+      confidence_score: 100,
     };
   };
 
@@ -243,7 +266,7 @@ export default function Dashboard() {
     setUserTier(newTier);
     setReportsRemaining(-1);
     setError(null);
-    alert(`Success! Upgraded to ${newTier.toUpperCase()} tier.`);
+    showToast(`Success! Upgraded to ${newTier.toUpperCase()} tier.`);
   };
 
   const handleMatchSubmit = async () => {
@@ -266,9 +289,15 @@ export default function Dashboard() {
       if (matchRes.ok) {
         const data = await matchRes.json();
         setMatchedSchemes(data.matches || []);
+        if (!trialUsed) {
+          setTrialUsed(true);
+        } else if (userTier === 'free') {
+          showToast('Free trial exhausted. Please upgrade to continue.', 'error');
+          return;
+        }
         setQuizStep(4);
       } else if (matchRes.status === 402) {
-         alert('Free trial exhausted. Please upgrade to continue.');
+         showToast('Free trial exhausted. Please upgrade to continue.', 'error');
          setActivePanel('plans');
       } else {
         const errorData = await matchRes.json();
@@ -284,6 +313,13 @@ export default function Dashboard() {
 
   return (
     <div className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 relative font-sans">
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 px-6 py-3 rounded-lg shadow-lg text-white text-xs font-bold animate-in fade-in slide-in-from-bottom-4 ${toast.type === 'success' ? 'bg-tricolorgreen' : toast.type === 'error' ? 'bg-red-600' : 'bg-blue-600'}`}>
+          {toast.message}
+        </div>
+      )}
+
       {/* Top Government Slogan Bar */}
       <div className="bg-gradient-to-r from-[#0a192f] via-[#0f2942] to-[#0a192f] text-slate-300 text-[10px] py-2 px-8 flex flex-col md:flex-row justify-between items-center border-b border-navy/40 shrink-0 gap-3 md:gap-0 shadow-sm z-30">
         <div className="flex items-center space-x-2 font-semibold text-center md:text-left tracking-wide">
@@ -298,46 +334,28 @@ export default function Dashboard() {
         <div className="flex items-center space-x-5 flex-wrap justify-center font-bold text-[9px]">
           <div className="flex items-center bg-white/5 rounded-full p-0.5 border border-white/10 shadow-inner">
             <button 
-              onClick={() => setLanguage('en')} 
+              onClick={() => {
+                setLanguage('en');
+                const gtSelect = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
+                if (gtSelect) { gtSelect.value = 'en'; gtSelect.dispatchEvent(new Event('change')); }
+              }} 
               className={`px-3 py-0.5 rounded-full transition-all cursor-pointer ${language === 'en' ? 'bg-saffron text-white shadow-sm font-black' : 'text-slate-400 hover:text-slate-200'}`}
             >
               English
             </button>
             <button 
-              onClick={() => setLanguage('hi')} 
+              onClick={() => {
+                setLanguage('hi');
+                const gtSelect = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
+                if (gtSelect) { gtSelect.value = 'hi'; gtSelect.dispatchEvent(new Event('change')); }
+              }} 
               className={`px-3 py-0.5 rounded-full transition-all cursor-pointer ${language === 'hi' ? 'bg-saffron text-white shadow-sm font-black' : 'text-slate-400 hover:text-slate-200'}`}
             >
               हिन्दी
             </button>
-          </div>
-          <span className="text-slate-700">|</span>
-          <div className="relative">
-            <select 
-              value={language}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === 'hi' || val === 'en') {
-                  setLanguage(val as 'hi' | 'en');
-                } else {
-                  alert(`क्षेत्रीय भाषा बदली गई: ${val} / Language changed to: ${val}`);
-                }
-              }}
-              className="bg-white/5 text-slate-200 border border-white/10 rounded-full pl-3 pr-6 py-1 text-[9px] font-bold cursor-pointer hover:bg-white/10 hover:text-white focus:outline-none transition-all appearance-none"
-            >
-              <option value="">Other Languages / अन्य भाषाएं</option>
-              <option value="pa" className="bg-[#0a192f]">ਪੰਜਾਬੀ (Punjabi)</option>
-              <option value="ur" className="bg-[#0a192f]">اردو (Urdu)</option>
-              <option value="bn" className="bg-[#0a192f]">বাংলা (Bengali)</option>
-              <option value="mr" className="bg-[#0a192f]">मराठी (Marathi)</option>
-              <option value="te" className="bg-[#0a192f]">తెలుగు (Telugu)</option>
-              <option value="ta" className="bg-[#0a192f]">தமிழ் (Tamil)</option>
-              <option value="kn" className="bg-[#0a192f]">ಕನ್ನಡ (Kannada)</option>
-              <option value="gu" className="bg-[#0a192f]">ਗੁਜਰਾਤੀ (Gujarati)</option>
-            </select>
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[8px]">▼</span>
-          </div>
         </div>
       </div>
+    </div>
 
       {/* Tricolour Stripe */}
       <div className="h-1 w-full bg-gradient-to-r from-saffron via-white to-tricolorgreen shrink-0 z-30" />
@@ -466,15 +484,15 @@ export default function Dashboard() {
               <div className="flex-1 flex flex-col overflow-hidden relative">
                 <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
                   <div>
-                    <h3 className="font-bold text-sm text-navy">नमस्ते, {profileName}! / Hello, {profileName}!</h3>
-                    <p className="text-[10px] text-slate-400">सार्थी कल्याण डेटा रिपोर्ट एवं प्रगति ट्रैकर / Welfare report and progress tracker</p>
+                    <h3 className="font-bold text-sm text-navy">{tl(`नमस्ते, ${profileName}!`, `Hello, ${profileName}!`)}</h3>
+                    <p className="text-[10px] text-slate-400">{tl('सार्थी कल्याण डेटा रिपोर्ट एवं प्रगति ट्रैकर', 'Welfare report and progress tracker')}</p>
                   </div>
                   <button 
                     onClick={() => { setActivePanel('quiz'); setQuizStep(1); }}
                     className="py-1.5 px-3.5 bg-saffron hover:bg-saffron-dark text-white font-bold rounded-lg text-[10px] uppercase tracking-wider shadow flex items-center cursor-pointer"
                   >
                     <Sparkles className="w-3.5 h-3.5 mr-1" />
-                    नई योजना खोजें / New Scheme Search
+                    {tl('नई योजना खोजें', 'New Scheme Search')}
                   </button>
                 </div>
 
@@ -484,29 +502,29 @@ export default function Dashboard() {
                     <div className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm space-y-2 flex flex-col justify-between">
                       <span className="text-3xl font-black text-navy leading-none">12</span>
                       <div>
-                        <span className="text-[10px] font-black text-navy block">योजनाएं मिलीं</span>
-                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block mt-0.5">Schemes Matched</span>
+                        <span className="text-[10px] font-black text-navy block">{tl('योजनाएं मिलीं', 'Schemes Matched')}</span>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block mt-0.5">{tl('Schemes Matched', 'Total Discovered')}</span>
                       </div>
                     </div>
                     <div className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm space-y-2 flex flex-col justify-between">
                       <span className="text-3xl font-black text-saffron leading-none">03</span>
                       <div>
-                        <span className="text-[10px] font-black text-navy block">सक्रिय आवेदन</span>
-                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block mt-0.5">Active Applications</span>
+                        <span className="text-[10px] font-black text-navy block">{tl('सक्रिय आवेदन', 'Active Applications')}</span>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block mt-0.5">{tl('Active Applications', 'Currently Processing')}</span>
                       </div>
                     </div>
                     <div className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm space-y-2 flex flex-col justify-between">
                       <span className="text-3xl font-black text-tricolorgreen leading-none">02</span>
                       <div>
-                        <span className="text-[10px] font-black text-navy block">स्वीकृत लाभ</span>
-                        <span className="text-[8px] font-bold text-slate-400 tracking-wider uppercase block mt-0.5">Approved Benefits</span>
+                        <span className="text-[10px] font-black text-navy block">{tl('स्वीकृत लाभ', 'Approved Benefits')}</span>
+                        <span className="text-[8px] font-bold text-slate-400 tracking-wider uppercase block mt-0.5">{tl('Approved Benefits', 'Ready to Claim')}</span>
                       </div>
                     </div>
                     <div className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm space-y-2 flex flex-col justify-between">
                       <span className="text-3xl font-black text-slate-500 leading-none">05</span>
                       <div>
-                        <span className="text-[10px] font-black text-navy block">सूचनाएं</span>
-                        <span className="text-[8px] font-bold text-slate-400 tracking-wider uppercase block mt-0.5">Alerts Received</span>
+                        <span className="text-[10px] font-black text-navy block">{tl('सूचनाएं', 'Alerts Received')}</span>
+                        <span className="text-[8px] font-bold text-slate-400 tracking-wider uppercase block mt-0.5">{tl('Alerts Received', 'Recent Updates')}</span>
                       </div>
                     </div>
                   </div>
@@ -517,25 +535,25 @@ export default function Dashboard() {
                     <div className="lg:col-span-7 bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm space-y-5 text-left">
                       <div className="flex justify-between items-center pb-3 border-b border-slate-100">
                         <div>
-                          <span className="text-xs font-black text-navy uppercase tracking-wider block">हाल के आवेदन</span>
-                          <span className="text-[9px] font-bold text-slate-400 uppercase block mt-0.5">Recent Applications</span>
+                          <span className="text-xs font-black text-navy uppercase tracking-wider block">{tl('हाल के आवेदन', 'Recent Applications')}</span>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase block mt-0.5">{tl('Recent Applications', 'Your Activity')}</span>
                         </div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase cursor-pointer hover:underline">सभी देखें / View All</span>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase cursor-pointer hover:underline">{tl('सभी देखें', 'View All')}</span>
                       </div>
 
                       <div className="space-y-4">
                         <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3">
                           <div className="flex items-start justify-between">
                             <div>
-                              <h4 className="font-bold text-xs text-navy leading-snug">पीएम किसान सम्मान निधि</h4>
-                              <p className="text-[9px] text-slate-400 font-medium">PM Kisan Samman Nidhi</p>
+                              <h4 className="font-bold text-xs text-navy leading-snug">{tl('पीएम किसान सम्मान निधि', 'PM Kisan Samman Nidhi')}</h4>
+                              <p className="text-[9px] text-slate-400 font-medium">{tl('कृषि मंत्रालय', 'Agriculture Ministry')}</p>
                               <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider mt-1">AGRICULTURE MINISTRY</p>
                             </div>
                             <span className="px-2 py-0.5 bg-green-50 text-tricolorgreen border border-green-200 text-[8px] font-black uppercase rounded-full">APPROVED</span>
                           </div>
                           <div className="space-y-1.5">
                             <div className="flex justify-between text-[8px] font-bold text-slate-400">
-                              <span>प्रगति / Progress</span>
+                              <span>{tl('प्रगति', 'Progress')}</span>
                               <span className="text-tricolorgreen font-black">90%</span>
                             </div>
                             <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
@@ -547,15 +565,15 @@ export default function Dashboard() {
                         <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3">
                           <div className="flex items-start justify-between">
                             <div>
-                              <h4 className="font-bold text-xs text-navy leading-snug">पीएम फसल बीमा योजना</h4>
-                              <p className="text-[9px] text-slate-400 font-medium">PM Fasal Bima Yojana</p>
+                              <h4 className="font-bold text-xs text-navy leading-snug">{tl('पीएम फसल बीमा योजना', 'PM Fasal Bima Yojana')}</h4>
+                              <p className="text-[9px] text-slate-400 font-medium">{tl('फसल बीमा विभाग', 'Crop Insurance Department')}</p>
                               <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider mt-1">CROP INSURANCE DEPARTMENT</p>
                             </div>
                             <span className="px-2 py-0.5 bg-yellow-50 text-saffron border border-yellow-200 text-[8px] font-black uppercase rounded-full">UNDER REVIEW</span>
                           </div>
                           <div className="space-y-1.5">
                             <div className="flex justify-between text-[8px] font-bold text-slate-400">
-                              <span>प्रगति / Progress</span>
+                              <span>{tl('प्रगति', 'Progress')}</span>
                               <span className="text-saffron font-black">45%</span>
                             </div>
                             <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
@@ -567,15 +585,15 @@ export default function Dashboard() {
                         <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3">
                           <div className="flex items-start justify-between">
                             <div>
-                              <h4 className="font-bold text-xs text-navy leading-snug">राष्ट्रीय छात्रवृत्ति पोर्टल</h4>
-                              <p className="text-[9px] text-slate-400 font-medium">National Scholarship Portal</p>
+                              <h4 className="font-bold text-xs text-navy leading-snug">{tl('राष्ट्रीय छात्रवृत्ति पोर्टल', 'National Scholarship Portal')}</h4>
+                              <p className="text-[9px] text-slate-400 font-medium">{tl('छात्रवृत्ति विभाग', 'Scholarship Department')}</p>
                               <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider mt-1">SCHOLARSHIP DEPARTMENT</p>
                             </div>
                             <span className="px-2 py-0.5 bg-blue-50 text-blue-600 border border-blue-200 text-[8px] font-black uppercase rounded-full">IN PROGRESS</span>
                           </div>
                           <div className="space-y-1.5">
                             <div className="flex justify-between text-[8px] font-bold text-slate-400">
-                              <span>प्रगति / Progress</span>
+                              <span>{tl('प्रगति', 'Progress')}</span>
                               <span className="text-blue-600 font-black">60%</span>
                             </div>
                             <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
@@ -589,34 +607,34 @@ export default function Dashboard() {
                     {/* Latest Notifications */}
                     <div className="lg:col-span-5 bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm space-y-5 text-left">
                       <div className="pb-3 border-b border-slate-100">
-                        <span className="text-xs font-black text-navy uppercase tracking-wider block">नवीनतम सूचनाएं</span>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase block mt-0.5">Latest Notifications</span>
+                        <span className="text-xs font-black text-navy uppercase tracking-wider block">{tl('नवीनतम सूचनाएं', 'Latest Notifications')}</span>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase block mt-0.5">{tl('Latest Notifications', 'Recent Updates')}</span>
                       </div>
                       
                       <div className="space-y-4">
                         <div className="p-4 border-l-4 border-red-500 bg-red-50/10 rounded-r-2xl space-y-2.5">
                           <div className="flex justify-between items-center text-[8px] font-bold text-red-500">
-                            <span>URGENT • TODAY</span>
+                            <span>{tl('अत्यावश्यक • आज', 'URGENT • TODAY')}</span>
                             <span>3:40 PM</span>
                           </div>
-                          <h5 className="font-bold text-xs text-navy leading-snug">PM Kisan - आवेदन तिथि समाप्त होने वाली है!</h5>
-                          <p className="text-[10px] text-slate-400 font-semibold">PM Kisan registration deadline closes in 2 days.</p>
+                          <h5 className="font-bold text-xs text-navy leading-snug">{tl('PM Kisan - आवेदन तिथि समाप्त होने वाली है!', 'PM Kisan - Registration deadline closing!')}</h5>
+                          <p className="text-[10px] text-slate-400 font-semibold">{tl('PM Kisan पंजीकरण की समय सीमा 2 दिन में समाप्त हो रही है।', 'PM Kisan registration deadline closes in 2 days.')}</p>
                           <p className="text-[9px] text-slate-500 leading-normal">Please submit your Aadhaar linking configuration to claim current cycle benefit.</p>
                           <button 
-                            onClick={() => { setSuccessSchemeName('पीएम किसान सम्मान निधि / PM Kisan'); setActivePanel('success'); }}
+                            onClick={() => { setSuccessSchemeName(tl('पीएम किसान सम्मान निधि', 'PM Kisan Samman Nidhi')); setActivePanel('guide'); setAppStep(1); }}
                             className="py-1.5 px-3 bg-red-500 hover:bg-red-600 text-white rounded-lg text-[9px] font-black uppercase tracking-wider shadow cursor-pointer transition-colors"
                           >
-                            अभी पूर्ण करें / Complete Now
+                            {tl('अभी पूर्ण करें', 'Complete Now')}
                           </button>
                         </div>
 
                         <div className="p-4 border-l-4 border-tricolorgreen bg-green-50/10 rounded-r-2xl space-y-1.5">
                           <div className="flex justify-between items-center text-[8px] font-bold text-tricolorgreen">
-                            <span>APPROVED • YESTERDAY</span>
+                            <span>{tl('स्वीकृत • कल', 'APPROVED • YESTERDAY')}</span>
                             <span>10:15 AM</span>
                           </div>
-                          <h5 className="font-bold text-xs text-navy leading-snug">PM Kisan Samman Nidhi - आधार आवेदन स्वीकृत!</h5>
-                          <p className="text-[10px] text-slate-400 font-semibold">PM Kisan Aadhaar application approved.</p>
+                          <h5 className="font-bold text-xs text-navy leading-snug">{tl('PM Kisan - आधार आवेदन स्वीकृत!', 'PM Kisan - Aadhaar application approved!')}</h5>
+                          <p className="text-[10px] text-slate-400 font-semibold">{tl('आपका आधार आवेदन सफलतापूर्वक स्वीकृत हो गया है।', 'Your Aadhaar application has been approved.')}</p>
                           <p className="text-[9px] text-slate-400">Your profile data is synchronized with secure state records.</p>
                         </div>
                       </div>
@@ -815,8 +833,8 @@ export default function Dashboard() {
               <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
                 <div className="px-6 py-4 border-b border-slate-100 bg-white flex justify-between items-center shrink-0">
                   <div>
-                    <h3 className="font-black text-sm text-navy uppercase tracking-wider">प्रधानमंत्री किसान सम्मान निधि - आवेदन मार्गदर्शिका</h3>
-                    <p className="text-[9px] text-slate-400 font-bold uppercase">APPLICATION GUIDE FOR PM-KISAN SAMMAN NIDHI</p>
+                    <h3 className="font-black text-sm text-navy uppercase tracking-wider">{successSchemeName || 'प्रधानमंत्री किसान सम्मान निधि'} - आवेदन मार्गदर्शिका</h3>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase">APPLICATION GUIDE FOR {successSchemeName || 'PM-KISAN SAMMAN NIDHI'}</p>
                   </div>
                   <span className="inline-flex items-center px-3 py-1 rounded bg-green-50 text-tricolorgreen border border-green-200 text-[9px] font-black uppercase shadow-sm">
                     <ShieldCheck className="w-4.5 h-4.5 mr-1" />
@@ -825,65 +843,133 @@ export default function Dashboard() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-4xl mx-auto w-full">
-                  {/* Progress tracker stepper */}
                   <div className="flex justify-between items-center p-4 bg-white border border-slate-200 rounded-xl shadow-sm text-[10px] font-bold text-slate-400">
-                    <span className="text-saffron font-black">1. विवरण / Details</span>
+                    <span className={appStep === 1 ? "text-saffron font-black" : "text-slate-400"}>1. विवरण / Details</span>
                     <ChevronRight className="w-3.5 h-3.5" />
-                    <span>2. दस्तावेज़ / Documents</span>
+                    <span className={appStep === 2 ? "text-saffron font-black" : "text-slate-400"}>2. दस्तावेज़ / Documents</span>
                     <ChevronRight className="w-3.5 h-3.5" />
-                    <span>3. समीक्षा / Review</span>
+                    <span className={appStep === 3 ? "text-saffron font-black" : "text-slate-400"}>3. समीक्षा / Review</span>
                     <ChevronRight className="w-3.5 h-3.5" />
-                    <span>4. भुगतान / Payment</span>
+                    <span className={appStep === 4 ? "text-saffron font-black" : "text-slate-400"}>4. भुगतान / Payment</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                     <span>5. पुष्टि / Confirm</span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-6 text-left">
-                    {/* Required Documents Checklist */}
-                    <div className="md:col-span-6 bg-white p-5 border border-slate-200 rounded-2xl shadow-sm space-y-4">
-                      <span className="text-xs font-black text-navy uppercase tracking-wider block border-b border-slate-100 pb-2">आवश्यक दस्तावेज / REQUIRED DOCUMENTS CHECKLIST</span>
-                      
-                      <div className="space-y-3 text-[10px] font-bold text-slate-600">
-                        <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
-                          <span className="flex items-center"><Check className="w-4 h-4 mr-2 text-tricolorgreen fill-current" /> आधार कार्ड / Aadhaar Card</span>
-                          <span className="text-[8px] bg-green-100 text-tricolorgreen px-2 py-0.5 rounded-full uppercase">VERIFIED</span>
+                  <div className={`grid grid-cols-1 md:grid-cols-12 gap-6 text-left ${appStep !== 1 ? 'hidden' : ''}`}>
+                      {/* Required Documents Checklist */}
+                      <div className="md:col-span-6 bg-white p-5 border border-slate-200 rounded-2xl shadow-sm space-y-4">
+                        <span className="text-xs font-black text-navy uppercase tracking-wider block border-b border-slate-100 pb-2">आवश्यक दस्तावेज / REQUIRED DOCUMENTS CHECKLIST</span>
+                        
+                        <div className="space-y-3 text-[10px] font-bold text-slate-600">
+                          {selectedScheme?.documents_required && selectedScheme.documents_required.length > 0 ? (
+                            selectedScheme.documents_required.map((doc, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
+                                <span className="flex items-center"><Check className="w-4 h-4 mr-2 text-slate-300" /> {doc}</span>
+                                <span className="text-[8px] px-2 py-0.5 rounded-full uppercase bg-slate-200 text-slate-500">REQUIRED</span>
+                              </div>
+                            ))
+                          ) : (
+                            <>
+                              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
+                                <span className="flex items-center"><Check className="w-4 h-4 mr-2 text-slate-300" /> आधार कार्ड / Aadhaar Card</span>
+                                <span className="text-[8px] bg-slate-200 text-slate-500 px-2 py-0.5 rounded-full uppercase">REQUIRED</span>
+                              </div>
+                              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
+                                <span className="flex items-center"><Check className="w-4 h-4 mr-2 text-slate-300" /> खतौनी / भूमि रिकॉर्ड / Land Record</span>
+                                <span className="text-[8px] bg-slate-200 text-slate-500 px-2 py-0.5 rounded-full uppercase">REQUIRED</span>
+                              </div>
+                            </>
+                          )}
                         </div>
-                        <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
-                          <span className="flex items-center"><Check className="w-4 h-4 mr-2 text-slate-300" /> खतौनी / भूमि रिकॉर्ड / Land Record</span>
-                          <span className="text-[8px] bg-slate-200 text-slate-500 px-2 py-0.5 rounded-full uppercase">REQUIRED</span>
-                        </div>
+                      </div>
+
+                      {/* Verify Your Information */}
+                      <div className="md:col-span-6 bg-white p-5 border border-slate-200 rounded-2xl shadow-sm space-y-4">
+                        <span className="text-xs font-black text-navy uppercase tracking-wider block border-b border-slate-100 pb-2">जानकारी सत्यापित करें / Verify Your Information</span>
+                        
+                        <form onSubmit={(e) => { 
+                          e.preventDefault(); 
+                          if (!profileName.trim()) {
+                            showToast('Please enter your full name.', 'error');
+                            return;
+                          }
+                          setAppStep(2); 
+                        }} className="space-y-3 text-xs">
+                          <div>
+                            <label className="text-[9px] font-bold text-navy uppercase block mb-1">पूरा नाम / FULL NAME</label>
+                            <input type="text" required value={profileName} onChange={(e) => setProfileName(e.target.value)} className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-navy font-bold focus:outline-none focus:border-navy" />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-bold text-navy uppercase block mb-1">आधार नंबर / AADHAAR NUMBER</label>
+                            <div className="flex gap-2">
+                              <input type="text" required value={formAadhaarNumber} onChange={(e) => setFormAadhaarNumber(e.target.value)} disabled={aadhaarStatus === 'verified' || aadhaarStatus === 'otp_sent'} placeholder="0000 0000 0000" className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded text-navy font-mono font-bold focus:outline-none focus:border-navy disabled:opacity-50" />
+                              {aadhaarStatus === 'idle' && (
+                                <button type="button" onClick={() => setAadhaarStatus('otp_sent')} className="px-3 bg-navy text-white text-[10px] font-bold rounded hover:bg-navy-light transition">Send OTP</button>
+                              )}
+                              {aadhaarStatus === 'verified' && (
+                                <div className="flex items-center px-3 bg-green-100 text-tricolorgreen text-[10px] font-bold rounded">VERIFIED</div>
+                              )}
+                            </div>
+                            {aadhaarStatus === 'otp_sent' && (
+                              <div className="mt-2 flex gap-2">
+                                <input type="text" placeholder="Enter OTP" value={aadhaarOtp} onChange={(e) => setAadhaarOtp(e.target.value)} className="flex-1 p-2 bg-white border border-saffron rounded text-navy font-mono font-bold focus:outline-none focus:border-saffron" />
+                                <button type="button" onClick={() => {
+                                  if(aadhaarOtp.length >= 4) {
+                                    setAadhaarStatus('verified');
+                                    showToast('Aadhaar verified successfully', 'success');
+                                  } else {
+                                    showToast('Invalid OTP', 'error');
+                                  }
+                                }} className="px-3 bg-saffron text-white text-[10px] font-bold rounded hover:bg-saffron-dark transition">Verify</button>
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-bold text-navy uppercase block mb-1">राज्य / STATE</label>
+                            <input type="text" required value={quizState || ''} onChange={(e) => setQuizState(e.target.value)} placeholder="e.g. Uttar Pradesh" className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-navy font-bold focus:outline-none focus:border-navy" />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-bold text-navy uppercase block mb-1">पेशा / OCCUPATION</label>
+                            <input type="text" required value={formOccupation || ''} onChange={(e) => setFormOccupation(e.target.value)} placeholder="e.g. Farmer" className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-navy font-bold focus:outline-none focus:border-navy" />
+                          </div>
+
+                          <button type="submit" className="w-full py-3 bg-gradient-to-r from-saffron to-orange-500 hover:from-saffron-dark hover:to-orange-600 text-white font-bold rounded-lg uppercase tracking-wider shadow-md transform transition hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-xs flex items-center justify-center gap-2">
+                            <span>सत्यापित करें और आगे बढ़ें / Verify & Proceed</span>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                          </button>
+                        </form>
                       </div>
                     </div>
 
-                    {/* Verify Your Information */}
-                    <div className="md:col-span-6 bg-white p-5 border border-slate-200 rounded-2xl shadow-sm space-y-4">
-                      <span className="text-xs font-black text-navy uppercase tracking-wider block border-b border-slate-100 pb-2">जानकारी सत्यापित करें / Verify Your Information</span>
-                      
-                      <form onSubmit={(e) => { e.preventDefault(); setSuccessSchemeName('प्रधानमंत्री किसान सम्मान निधि / PM Kisan'); setActivePanel('success'); }} className="space-y-3 text-xs">
-                        <div>
-                          <label className="text-[9px] font-bold text-navy uppercase block mb-1">पूरा नाम / FULL NAME</label>
-                          <input type="text" required value={profileName} onChange={(e) => setProfileName(e.target.value)} className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-navy font-bold focus:outline-none focus:border-navy" />
-                        </div>
-                        <div>
-                          <label className="text-[9px] font-bold text-navy uppercase block mb-1">आधार नंबर / AADHAAR NUMBER</label>
-                          <input type="text" required value="XXXX XXXX 1234" disabled className="w-full p-2 bg-slate-100 border border-slate-200 rounded text-slate-500 font-mono font-bold" />
-                        </div>
-                        <div>
-                          <label className="text-[9px] font-bold text-navy uppercase block mb-1">राज्य / STATE</label>
-                          <input type="text" required value="उत्तर प्रदेश" disabled className="w-full p-2 bg-slate-100 border border-slate-200 rounded text-slate-500 font-bold" />
-                        </div>
-                        <div>
-                          <label className="text-[9px] font-bold text-navy uppercase block mb-1">खेती का प्रकार / TYPE OF FARMING</label>
-                          <input type="text" required value="सीमांत खेती (Marginal Farming)" disabled className="w-full p-2 bg-slate-100 border border-slate-200 rounded text-slate-500 font-bold" />
-                        </div>
-
-                        <button type="submit" className="w-full py-2.5 bg-saffron hover:bg-saffron-dark text-white font-bold rounded-lg uppercase tracking-wider shadow cursor-pointer text-xs">
-                          सत्यापित करें और आगे बढ़ें / Verify & Proceed
-                        </button>
-                      </form>
+                  <div className={`bg-white p-6 border border-slate-200 rounded-2xl shadow-sm text-center space-y-6 ${appStep !== 2 ? 'hidden' : ''}`}>
+                      <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto">
+                        <UploadCloud className="w-8 h-8 text-blue-500" />
+                      </div>
+                      <div>
+                        <h4 className="font-black text-navy">दस्तावेज़ अपलोड करें / Upload Documents</h4>
+                        <p className="text-xs text-slate-500 mt-1">Please upload your Khatauni (Land Record) in PDF or JPG format.</p>
+                      </div>
+                      <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors">
+                        <span className="text-xs font-bold text-navy">Click to browse or drag and drop</span>
+                        <p className="text-[10px] text-slate-400 mt-1">Max file size 5MB</p>
+                      </div>
+                      <button onClick={() => setAppStep(3)} className="w-full py-3 bg-navy hover:bg-navy-light text-white font-bold rounded-lg uppercase tracking-wider shadow-md transform transition hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-xs">
+                        दस्तावेज़ सहेजें और जारी रखें / Save & Continue
+                      </button>
                     </div>
-                  </div>
 
+                  <div className={`bg-white p-6 border border-slate-200 rounded-2xl shadow-sm space-y-6 text-left ${appStep !== 3 ? 'hidden' : ''}`}>
+                      <h4 className="font-black text-navy border-b border-slate-100 pb-3">समीक्षा / Final Review</h4>
+                      <div className="space-y-3 text-xs">
+                        <div className="flex justify-between border-b border-slate-50 pb-2"><span className="text-slate-500 font-bold">Applicant Name</span><span className="text-navy font-black">{profileName}</span></div>
+                        <div className="flex justify-between border-b border-slate-50 pb-2"><span className="text-slate-500 font-bold">Aadhaar</span><span className="text-navy font-black">XXXX XXXX 1234 (Verified)</span></div>
+                        <div className="flex justify-between border-b border-slate-50 pb-2"><span className="text-slate-500 font-bold">Land Record</span><span className="text-tricolorgreen font-black flex items-center"><Check className="w-3 h-3 mr-1" /> Uploaded</span></div>
+                      </div>
+                      <button onClick={() => { setActivePanel('success'); setAppStep(1); }} className="w-full py-3 bg-tricolorgreen hover:bg-green-700 text-white font-bold rounded-lg uppercase tracking-wider shadow-md transform transition hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-xs flex justify-center items-center gap-2">
+                        <span>आवेदन जमा करें / Submit Application</span>
+                        <Check className="w-4 h-4" />
+                      </button>
+                    </div>
                 </div>
               </div>
             )}
@@ -937,6 +1023,7 @@ export default function Dashboard() {
                                   type="text"
                                   value={cardNumber}
                                   onChange={(e) => setCardNumber(e.target.value)}
+                                  placeholder="0000 0000 0000 0000"
                                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-navy font-mono"
                                 />
                                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-orange-500">VISA</span>
@@ -953,8 +1040,17 @@ export default function Dashboard() {
                               />
                             </div>
 
-                            <button onClick={() => { alert('Success!'); setUserTier('pro'); setActivePanel('tracker'); }} className="w-full py-2.5 bg-saffron hover:bg-saffron-dark text-white font-bold rounded-lg text-xs uppercase tracking-wider shadow cursor-pointer">
-                              सुरक्षित भुगतान करें / Pay Securely
+                            <button onClick={() => { 
+                              if (!cardNumber.trim()) {
+                                showToast('कृपया कार्ड नंबर दर्ज करें / Please enter card number', 'error');
+                                return;
+                              }
+                              showToast('Payment Successful! / भुगतान सफल!', 'success'); 
+                              setUserTier('pro'); 
+                              setActivePanel('tracker'); 
+                            }} className="w-full py-3 bg-gradient-to-r from-saffron to-orange-600 hover:from-saffron-dark hover:to-orange-700 text-white font-bold rounded-lg text-xs uppercase tracking-wider shadow-lg transform transition hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2">
+                              <span>सुरक्षित भुगतान करें / Pay Securely</span>
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                             </button>
                           </div>
                         )}
@@ -1023,7 +1119,7 @@ export default function Dashboard() {
 
                   <div className="flex space-x-2">
                     <button 
-                      onClick={() => { setSuccessSchemeName(selectedScheme.name_hi || selectedScheme.name); setActivePanel('success'); }}
+                      onClick={() => { setSuccessSchemeName((selectedScheme.name_hi || selectedScheme.name) + ' / ' + selectedScheme.name); setActivePanel('guide'); setAppStep(1); }}
                       className="py-1.5 px-3 bg-saffron hover:bg-saffron-dark text-white font-bold rounded-lg text-[9px] uppercase tracking-wider shadow transition-all cursor-pointer"
                     >
                       अभी आवेदन करें / Apply Now
@@ -1046,7 +1142,7 @@ export default function Dashboard() {
                   <div className="grid grid-cols-3 gap-4 p-4 bg-slate-50 border border-slate-200/60 rounded-2xl text-center">
                     <div>
                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">कुल लाभ / Total Benefit</span>
-                      <span className="text-sm font-black text-tricolorgreen">₹6,000 / वर्ष / ₹6,000 / Yr</span>
+                      <span className="text-sm font-black text-tricolorgreen">{selectedScheme.benefit_amount}</span>
                     </div>
                     <div className="border-x border-slate-200">
                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">अंतिम तिथि / Deadline</span>
@@ -1054,7 +1150,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">योग्यता स्कोर / Match Score</span>
-                      <span className="text-xs font-bold text-saffron">95% मैच / 95% Match</span>
+                      <span className="text-xs font-bold text-saffron">{selectedScheme.confidence_score ? (selectedScheme.confidence_score > 1 ? selectedScheme.confidence_score : Math.round(selectedScheme.confidence_score * 100)) : 95}% मैच / Match</span>
                     </div>
                   </div>
 
@@ -1063,16 +1159,22 @@ export default function Dashboard() {
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
                       <span className="text-xs font-black text-navy uppercase tracking-wider block">आवश्यक दस्तावेज / Required Documents</span>
                       <ul className="space-y-2 text-[10px] text-slate-600 font-bold">
-                        <li className="flex items-center"><Check className="w-4 h-4 mr-2 text-tricolorgreen" /> आधार कार्ड / Aadhaar Card</li>
-                        <li className="flex items-center"><Check className="w-4 h-4 mr-2 text-tricolorgreen" /> खतौनी / भूमि रिकॉर्ड / Land Records</li>
+                        {selectedScheme.documents_required && selectedScheme.documents_required.length > 0 ? selectedScheme.documents_required.map((doc, idx) => (
+                          <li key={idx} className="flex items-center"><Check className="w-4 h-4 mr-2 text-tricolorgreen" /> {doc}</li>
+                        )) : (
+                          <>
+                            <li className="flex items-center"><Check className="w-4 h-4 mr-2 text-tricolorgreen" /> आधार कार्ड / Aadhaar Card</li>
+                            <li className="flex items-center"><Check className="w-4 h-4 mr-2 text-tricolorgreen" /> खतौनी / भूमि रिकॉर्ड / Land Records</li>
+                          </>
+                        )}
                       </ul>
                     </div>
 
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
                       <span className="text-xs font-black text-navy uppercase tracking-wider block">पात्रता मापदंड / Eligibility Criteria</span>
                       <ul className="space-y-2 text-[10px] text-slate-600 font-bold">
-                        <li className="flex items-center"><Check className="w-4 h-4 mr-2 text-tricolorgreen" /> राज्य: उत्तर प्रदेश / State: UP</li>
-                        <li className="flex items-center"><Check className="w-4 h-4 mr-2 text-tricolorgreen" /> पेशा: किसान / Occupation: Farmer</li>
+                        <li className="flex items-center"><Check className="w-4 h-4 mr-2 text-tricolorgreen" /> राज्य / State: {quizState || 'All India'}</li>
+                        <li className="flex items-center"><Check className="w-4 h-4 mr-2 text-tricolorgreen" /> पेशा / Occupation: {formOccupation ? formOccupation.charAt(0).toUpperCase() + formOccupation.slice(1) : 'Any'}</li>
                       </ul>
                     </div>
                   </div>
@@ -1101,7 +1203,7 @@ export default function Dashboard() {
                     <div className="flex justify-between items-center pb-3 border-b border-slate-200/60">
                       <div>
                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">आवेदन संदर्भ संख्या / REFERENCE NUMBER</span>
-                        <span className="text-sm font-black text-navy">SK-2024-10-12345</span>
+                        <span className="text-sm font-black text-navy">{successReferenceId}</span>
                       </div>
                       <span className="px-2 py-0.5 bg-yellow-50 text-saffron border border-yellow-200 text-[8px] font-black uppercase rounded-full">समीक्षा के अधीन / UNDER REVIEW</span>
                     </div>
@@ -1113,7 +1215,7 @@ export default function Dashboard() {
                       </div>
                       <div>
                         <span className="text-[9px] text-slate-400 font-bold uppercase block mb-0.5">आवेदन की तिथि / APPLICATION DATE</span>
-                        <span className="text-navy font-bold">15 Oct 2024</span>
+                        <span className="text-navy font-bold">{successDate}</span>
                       </div>
                     </div>
 
@@ -1127,7 +1229,7 @@ export default function Dashboard() {
 
                   <button 
                     onClick={() => setActivePanel('tracker')}
-                    className="py-2.5 px-6 bg-navy hover:bg-navy-light text-white font-bold rounded-lg text-xs uppercase tracking-wider shadow transition-all cursor-pointer"
+                    className="py-3 px-8 bg-gradient-to-r from-navy to-[#0a192f] hover:from-[#112a4f] hover:to-navy text-white text-xs font-bold rounded-lg shadow-lg transform transition hover:scale-105 active:scale-95 uppercase tracking-widest cursor-pointer"
                   >
                     डैशबोर्ड पर वापस जाएं / Back to Dashboard
                   </button>
@@ -1156,7 +1258,7 @@ export default function Dashboard() {
                       यह योजना आपके प्रोफाइल से 95% मेल खाती है। अपनी पढ़ाई के लिए वित्तीय सहायता प्राप्त करने के लिए अभी आवेदन करें। / This scheme matches 95% with your profile. Apply now.
                     </p>
                     <button 
-                      onClick={() => { setSuccessSchemeName('राष्ट्रीय छात्रवृत्ति / National Scholarship'); setActivePanel('success'); }} 
+                      onClick={() => { setSuccessSchemeName('राष्ट्रीय छात्रवृत्ति / National Scholarship'); setActivePanel('guide'); setAppStep(1); }} 
                       className="py-1.5 px-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg text-[9px] uppercase tracking-wider shadow-sm transition-all cursor-pointer"
                     >
                       अभी आवेदन करें / Apply Now
@@ -1215,7 +1317,7 @@ export default function Dashboard() {
                   </div>
 
                   {/* Form fields identical to screen */}
-                  <form onSubmit={(e) => { e.preventDefault(); alert('Saved!'); }} className="space-y-4 text-xs font-semibold">
+                  <form onSubmit={(e) => { e.preventDefault(); showToast('Saved successfully! / सफलतापूर्वक सहेजा गया!', 'success'); }} className="space-y-4 text-xs font-semibold">
                     <div>
                       <label className="text-[10px] font-bold text-navy uppercase block mb-1">
                         Name / पूरा नाम
@@ -1241,9 +1343,11 @@ export default function Dashboard() {
                           onChange={(e) => setProfileEmail(e.target.value)}
                           className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-navy font-bold focus:outline-none focus:border-navy pr-10"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-tricolorgreen text-xs">
-                          ✔️
-                        </span>
+                        {profileEmail && (
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-tricolorgreen text-xs">
+                            ✔️
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -1255,13 +1359,15 @@ export default function Dashboard() {
                         <input
                           type="text"
                           required
-                          disabled
                           value={profilePhone}
-                          className="w-full p-2 bg-slate-100 border border-slate-200 rounded text-slate-500 font-bold focus:outline-none pr-20"
+                          onChange={(e) => setProfilePhone(e.target.value)}
+                          className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-navy font-bold focus:outline-none focus:border-navy pr-20"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#000080] text-white text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
-                          Verified
-                        </span>
+                        {profilePhone && (
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#000080] text-white text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
+                            Verified
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -1360,14 +1466,19 @@ export default function Dashboard() {
                             setMatchedSchemes(data.matches);
                           }
                         } else {
-                          const err = await res.json();
-                          const errMsg = res.status === 401 
-                            ? 'Your session has expired. Please refresh the page or log in again.\n\nआपका सत्र समाप्त हो गया है। कृपया पेज रीफ्रेश करें।'
-                            : (err.detail?.error || 'Error connecting to assistant.');
-                          setMessages([...newMessages, { role: 'assistant' as const, content: errMsg }]);
+                          const text = await res.text();
+                          try {
+                            const err = JSON.parse(text);
+                            const errMsg = res.status === 401 
+                              ? 'Your session has expired. Please refresh the page or log in again.\n\nआपका सत्र समाप्त हो गया है। कृपया पेज रीफ्रेश करें।'
+                              : (err.detail?.error || 'Error connecting to assistant.');
+                            setMessages([...newMessages, { role: 'assistant', content: errMsg }]);
+                          } catch (parseErr) {
+                            setMessages([...newMessages, { role: 'assistant', content: `Server Error (${res.status}): ${text.substring(0, 150)}...` }]);
+                          }
                         }
-                      } catch (err) {
-                        setMessages([...newMessages, { role: 'assistant' as const, content: 'Connection error. Please check your internet.\n\nकनेक्शन त्रुटि। कृपया अपना इंटरनेट जांचें।' }]);
+                      } catch (err: any) {
+                        setMessages([...newMessages, { role: 'assistant', content: `Connection error: ${err.message || 'Unknown network error'}` }]);
                       } finally {
                         setIsLoading(false);
                       }
