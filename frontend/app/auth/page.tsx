@@ -8,6 +8,8 @@ import { Phone, ArrowRight, ShieldCheck, RefreshCw, Landmark as GovernmentIcon, 
 export default function AuthPage() {
   const router = useRouter();
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState<'en' | 'hi'>('hi');
@@ -19,6 +21,7 @@ export default function AuthPage() {
       ? 'सरकारी योजनाओं का लाभ उठाने के लिए अपना मोबाइल दर्ज करें।'
       : 'Enter your mobile to access welfare benefits.',
     phoneLabel: language === 'hi' ? 'मोबाइल नंबर' : 'Mobile Number',
+    phonePlaceholder: language === 'hi' ? '98765 43210' : '98765 43210',
     loginBtn: language === 'hi' ? 'लॉगिन करें' : 'Login',
     errorMsg: language === 'hi'
       ? 'कृपया एक मान्य 10-अंकीय मोबाइल नंबर दर्ज करें।'
@@ -31,23 +34,24 @@ export default function AuthPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validate: exactly 10 digits
-    const cleaned = phoneNumber.replace(/\D/g, '');
-    if (cleaned.length !== 10) {
-      setError(t.errorMsg);
+    if (!otpSent) {
+      setOtpSent(true);
       return;
     }
-
-    setLoading(true);
     setError(null);
+    setLoading(true);
 
     try {
-      // Dev-login: works without Firebase, accepts any valid 10-digit number
+      const cleaned = phoneNumber.replace(/\D/g, '');
+      if (cleaned.length < 10) {
+        throw new Error(language === 'hi' ? 'कृपया एक वैध मोबाइल नंबर दर्ज करें।' : 'Please enter a valid mobile number.');
+      }
+
+      // Dev mode fast-path: if Firebase isn't configured, bypass Turnstile
       const devRes = await fetch('/api/auth/dev-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: cleaned }),
+        body: JSON.stringify({ phone: cleaned, otp: otp }),
       });
 
       if (devRes.ok) {
@@ -139,23 +143,40 @@ export default function AuthPage() {
                 {t.phoneLabel}
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-bold">
-                  +91
-                </span>
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-slate-400 font-semibold text-sm">+91</span>
+                  <div className="h-4 w-[1px] bg-slate-200 ml-2"></div>
+                </div>
                 <input
-                  id="phone"
                   type="tel"
-                  placeholder="9876543210"
-                  maxLength={10}
+                  placeholder={t.phonePlaceholder}
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
-                  className="w-full pl-12 pr-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-saffron/30 focus:border-saffron text-sm font-semibold transition-all text-navy bg-white"
+                  disabled={otpSent}
+                  className="w-full pl-12 pr-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-saffron/30 focus:border-saffron text-sm font-semibold transition-all text-navy bg-white disabled:opacity-50"
                   autoComplete="tel"
                   inputMode="numeric"
                   required
                 />
               </div>
             </div>
+
+            {otpSent && (
+              <div className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <label className="text-[10px] font-bold text-navy uppercase tracking-wider block">
+                  {language === 'hi' ? 'OTP दर्ज करें / ENTER OTP' : 'ENTER OTP'}
+                </label>
+                <input
+                  type="text"
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg border border-saffron focus:outline-none focus:ring-2 focus:ring-saffron/30 focus:border-saffron text-sm font-mono font-bold transition-all text-navy bg-white"
+                  inputMode="numeric"
+                  required
+                />
+              </div>
+            )}
 
             {/* Security Badge (replaces Turnstile in dev) */}
             <div className="flex items-center justify-center space-x-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
@@ -177,7 +198,7 @@ export default function AuthPage() {
                 </>
               ) : (
                 <>
-                  {t.loginBtn}
+                  {otpSent ? (language === 'hi' ? 'लॉगिन करें' : 'Verify & Login') : t.loginBtn}
                   <ArrowRight className="w-4 h-4 ml-1.5" />
                 </>
               )}

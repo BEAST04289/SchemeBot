@@ -112,16 +112,18 @@ async def chat_endpoint(chat_req: ChatRequest, request: Request):
     from agents.eligibility import run_eligibility_agent_whatsapp
     from db.firestore import get_conversation, save_conversation
     
-    session_id = f"web_{phone_hash}"
+    import hashlib
+    # Create a stateless session ID based on the conversation so it re-extracts if messages change
+    msg_hash = hashlib.md5(str(chat_req.messages).encode()).hexdigest()[:8]
+    session_id = f"web_{phone_hash}_{msg_hash}"
     
     try:
         # We replace the stored conversation with the one from the frontend to keep it stateless from the backend's perspective,
         # or we just pass the frontend's conversation directly to the agent.
         result = await run_eligibility_agent_whatsapp(session_id=session_id, conversation=chat_req.messages)
         
-        reply = result["explanation_hi"] or result["explanation_en"] or ""
-        if result["explanation_hi"] and result["explanation_en"] and result["explanation_hi"] != result["explanation_en"]:
-            reply = f"{result['explanation_hi']}\n\n---\n\n{result['explanation_en']}"
+        # Only return one explanation to avoid repeating text when the model outputs English for both keys
+        reply = result["explanation_en"] or result["explanation_hi"] or ""
             
         return {
             "reply": reply,

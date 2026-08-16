@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n";
+import Script from "next/script";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -27,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${notoDevanagari.variable}`}>
+    <html lang="en" translate="no" className={`${inter.variable} ${notoDevanagari.variable}`}>
       <body className="antialiased min-h-screen bg-slate-50 text-navy flex flex-col">
         {/* Tricolour Stripe at top */}
         <div className="tricolour-bar sticky top-0 z-50 shadow-sm" />

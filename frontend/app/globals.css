@@ -38,3 +38,25 @@ body {
   background: linear-gradient(to right, #FF9933 33.3%, #ffffff 33.3%, #ffffff 66.6%, #138808 66.6%);
   width: 100%;
 }
+
+/* Google Translate Widget Overrides */
+.goog-te-banner-frame,
+.goog-te-banner-frame.skiptranslate,
+.VIpgJd-ZVi9od-aZ2wEe-wOHMyf,
+.VIpgJd-ZVi9od-ORHb-OEVmcd {
+    display: none !important;
+    visibility: hidden !important;
+} 
+body {
+    top: 0px !important; 
+    position: static !important;
+}
+#goog-gt-tt, 
+.goog-tooltip,
+.goog-tooltip:hover {
+    display: none !important;
+    visibility: hidden !important;
+}
+iframe[name="goog_te_banner"] {
+    display: none !important;
+}
