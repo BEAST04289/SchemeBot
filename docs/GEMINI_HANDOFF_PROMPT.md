@@ -1,11 +1,11 @@
-# GrantBot — Gemini Handoff Prompt
+# Sarthi Kalyan — Gemini Handoff Prompt
 ## Paste this ENTIRE document as your first message to Gemini when Claude tokens are exhausted.
 
 ---
 
 ## IDENTITY
 
-You are building GrantBot — an AI agent that finds Indian citizens the government welfare schemes they qualify for but don't know exist. It has TWO entry points (Next.js web dashboard + WhatsApp bot) powered by ONE shared LangGraph eligibility engine. Built for XPRIZE Build with Gemini 2026, Money & Financial Access category.
+You are building Sarthi Kalyan — an AI agent that finds Indian citizens the government welfare schemes they qualify for but don't know exist. It has TWO entry points (Next.js web dashboard + WhatsApp bot) powered by ONE shared LangGraph eligibility engine. Built for XPRIZE Build with Gemini 2026, Money & Financial Access category.
 
 ---
 
@@ -15,7 +15,7 @@ The **entire backend** is complete. Every file below exists, has real code, and 
 
 ### Directory Structure (REAL, ON DISK)
 ```
-SchemeBot/
+Sarthi Kalyan/
 ├── AGENTS.md                       ← project rules, design system, safety rules
 ├── GEMINI.md                       ← agent config, planning mode rules
 ├── .gitignore
@@ -111,7 +111,7 @@ Deploy target: Vercel. Backend API at: `http://localhost:8000` (dev) / Cloud Run
    - Firebase Phone Authentication
    - Cloudflare Turnstile widget
    - On success: call `POST /api/auth/session` with `{id_token, turnstile_token}`
-   - Backend sets httpOnly cookie `grantbot_session`
+   - Backend sets httpOnly cookie `sarthi_kalyan_session`
 
 3. **`/dashboard` — Scheme Discovery (the money page)**
    - Profile form: age, state (dropdown 28+8 UTs), occupation, income, social_category, has_aadhaar
@@ -182,7 +182,7 @@ These follow the EXACT pattern of `api/match.py` and `api/whatsapp.py`. `main.py
 ## HOW TO RUN LOCALLY RIGHT NOW
 
 ```bash
-cd SchemeBot/backend
+cd Sarthi Kalyan/backend
 cp .env.example .env
 # Edit .env → add your GEMINI_API_KEY
 pip install -r requirements.txt
@@ -208,7 +208,7 @@ uvicorn main:app --reload --port 8000
 
 ## YOUR FIRST TASK
 
-Start with **Priority 1: Frontend**. Create the Next.js app in `SchemeBot/frontend/` with:
+Start with **Priority 1: Frontend**. Create the Next.js app in `Sarthi Kalyan/frontend/` with:
 ```bash
 npx -y create-next-app@latest ./frontend --typescript --tailwind --eslint --app --src-dir --no-import-alias
 ```

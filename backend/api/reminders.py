@@ -20,7 +20,7 @@ from db.bigquery import log_event
 
 import asyncio
 
-logger = logging.getLogger("grantbot.reminders")
+logger = logging.getLogger("sarthi_kalyan.reminders")
 router = APIRouter()
 
 

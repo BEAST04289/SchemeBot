@@ -1,4 +1,4 @@
-# GrantBot — Antigravity-Specific Rules (GEMINI.md)
+# Sarthi Kalyan — Antigravity-Specific Rules (GEMINI.md)
 # Highest priority over AGENTS.md in Antigravity. Covers Manager Surface
 # squad configuration and Planning Mode preferences specific to this IDE.
 

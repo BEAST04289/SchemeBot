@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 
 from config import settings, HAS_BIGQUERY
 
-logger = logging.getLogger("grantbot.bigquery")
+logger = logging.getLogger("sarthi_kalyan.bigquery")
 
 # Use absolute path relative to this file so logs dir is always inside backend/
 _LOGS_DIR = Path(__file__).resolve().parent.parent / "logs"
@@ -39,7 +39,7 @@ def _get_client():
 
 async def log_event(table: str, row: dict) -> None:
     """
-    Logs one row to BigQuery table `grantbot.{table}`, or to
+    Logs one row to BigQuery table `sarthi_kalyan.{table}`, or to
     logs/{table}.jsonl if BigQuery isn't configured or the insert fails.
     Never raises — a logging failure should never break the user-facing
     request that triggered it.
@@ -49,7 +49,7 @@ async def log_event(table: str, row: dict) -> None:
     if HAS_BIGQUERY:
         try:
             client = _get_client()
-            table_id = f"{settings.gcp_project}.grantbot.{table}"
+            table_id = f"{settings.gcp_project}.sarthi_kalyan.{table}"
             errors = client.insert_rows_json(table_id, [row])
             if errors:
                 logger.error(f"BigQuery insert errors: {errors}")

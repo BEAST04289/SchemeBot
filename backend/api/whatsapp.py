@@ -21,7 +21,7 @@ from agents.eligibility import run_eligibility_agent_whatsapp
 from db.firestore import get_conversation, save_conversation, check_trial_status, consume_trial, hash_phone
 from db.bigquery import log_event
 
-logger = logging.getLogger("grantbot.whatsapp")
+logger = logging.getLogger("sarthi_kalyan.whatsapp")
 router = APIRouter()
 
 _validator = RequestValidator(settings.twilio_token) if settings.twilio_token else None
@@ -33,12 +33,22 @@ FALLBACK_ERROR_MESSAGE = (
 
 
 @router.post("/webhook")
-async def whatsapp_webhook(request: Request, From: str = Form(...), Body: str = Form(...)):
+async def whatsapp_webhook(request: Request):
+    content_type = request.headers.get("Content-Type", "")
+    if "application/json" in content_type:
+        data = await request.json()
+        From = data.get("From", "")
+        Body = data.get("Body", "")
+    else:
+        form = await request.form()
+        From = form.get("From", "")
+        Body = form.get("Body", "")
+
     # Signature validation only enforced in production — in dev/ngrok testing
     # the URL Twilio signs against doesn't match cleanly and would block testing.
     if settings.is_production and _validator:
         signature = request.headers.get("X-Twilio-Signature", "")
-        form_data = dict(await request.form())
+        form_data = dict(await request.form()) if "application/json" not in content_type else data
         if not _validator.validate(str(request.url), form_data, signature):
             logger.warning(f"Invalid Twilio signature from ...{From[-6:]}")
             raise HTTPException(status_code=403, detail="Invalid signature")

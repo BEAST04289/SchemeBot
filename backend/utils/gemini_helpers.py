@@ -16,7 +16,7 @@ import time
 import logging
 from typing import Optional
 
-logger = logging.getLogger("grantbot.gemini")
+logger = logging.getLogger("sarthi_kalyan.gemini")
 
 # These are typically transient — worth retrying with backoff
 RETRYABLE_ERROR_NAMES = (

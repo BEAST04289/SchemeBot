@@ -1,9 +1,9 @@
-# GrantBot — Agent Rules (Cross-Tool: Antigravity + Claude Code + Cursor)
+# Sarthi Kalyan — Agent Rules (Cross-Tool: Antigravity + Claude Code + Cursor)
 # Place in project root. All tools read this automatically.
 # Priority in Antigravity: GEMINI.md > AGENTS.md > .agent/rules/
 
 ## Project Identity
-GrantBot is ONE system with TWO entry points: a Next.js web dashboard and
+Sarthi Kalyan is ONE system with TWO entry points: a Next.js web dashboard and
 a WhatsApp bot, both served by the SAME LangGraph eligibility agent
 (backend/agents/eligibility.py). There is no separate "MVP" and "full
 system" anymore — this IS the full system, built to run in degraded

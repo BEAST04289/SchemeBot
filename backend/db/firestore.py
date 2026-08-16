@@ -2,7 +2,7 @@
 Firestore Data Layer — with SQLite Fallback
 ================================================
 When config.HAS_FIRESTORE is True: reads/writes real Firestore.
-When False: uses a local SQLite database (backend/data/grantbot.db).
+When False: uses a local SQLite database (backend/data/sarthi_kalyan.db).
 
 Every function has an IDENTICAL signature and return shape regardless
 of which backend is active. Callers (agents, API routes) never branch
@@ -28,7 +28,7 @@ if HAS_FIRESTORE:
     db = fs.client()
 else:
     # ── SQLite Fallback Setup ─────────────────────────────────────────────────
-    DB_PATH = Path(__file__).resolve().parent.parent / "data" / "grantbot.db"
+    DB_PATH = Path(__file__).resolve().parent.parent / "data" / "sarthi_kalyan.db"
     
     # Ensure data directory exists
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -142,7 +142,7 @@ async def get_cached_profile(phone_hash: str) -> Optional[dict]:
         return profile
     except Exception as e:
         import logging
-        logging.getLogger("grantbot.db").warning(f"Error reading cached profile: {e}")
+        logging.getLogger("sarthi_kalyan.db").warning(f"Error reading cached profile: {e}")
         return None
 
 async def save_cached_profile(phone_hash: str, profile: dict) -> None:

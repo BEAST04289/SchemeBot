@@ -1,4 +1,4 @@
-# SchemeBot — Continuation Prompt for Next Agent Session
+# Sarthi Kalyan — Continuation Prompt for Next Agent Session
 # Last Updated: 2026-08-16 10:00 IST
 # Use this prompt if the current session runs out of tokens.
 # Paste this ENTIRE file as context for Gemini 3.1 Pro or Claude.
@@ -9,8 +9,8 @@ This is a Gemini XPRIZE Build 2026 submission (Money & Financial Access category
 The system has TWO entry points: a Next.js web dashboard and a WhatsApp bot, both
 served by the SAME LangGraph eligibility agent.
 
-Repository: https://github.com/BEAST04289/SchemeBot
-Local path: c:\Users\shaur\OneDrive\Desktop\SchemeBot
+Repository: https://github.com/BEAST04289/Sarthi Kalyan
+Local path: c:\Users\shaur\OneDrive\Desktop\Sarthi Kalyan
 
 ---
 
@@ -87,7 +87,7 @@ and concurrent WhatsApp webhook tests. Added Windows cp1252 encoding fix.
 | Dev-login creates session | VERIFIED | Returns 200 + httpOnly JWT cookie |
 | Frontend `npm run build` | VERIFIED | All 7 pages compiled, zero TypeScript errors |
 | All 4 peripheral routers mount | VERIFIED | Server log shows reminders, tracker, admin, impact mounted |
-| SQLite fallback creates DB | NEEDS CHECK | `grantbot.db` should be created on first write after server start |
+| SQLite fallback creates DB | NEEDS CHECK | `sarthi_kalyan.db` should be created on first write after server start |
 | WhatsApp webhook returns TwiML | NEEDS CHECK | Smoke test was running — check results |
 | Web match returns schemes | NEEDS CHECK | Smoke test was running — check results |
 | Razorpay payment flow | NOT CONFIGURED | No keys in `.env` |

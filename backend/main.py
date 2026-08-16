@@ -1,5 +1,5 @@
 """
-GrantBot FastAPI Backend — Unified Entry Point
+Sarthi Kalyan FastAPI Backend — Unified Entry Point
 ================================================
 ONE system serving both the web dashboard and the WhatsApp bot through
 a shared LangGraph eligibility agent (agents/eligibility.py).
@@ -35,12 +35,12 @@ from config import settings, HAS_CHROMADB, HAS_FIRESTORE, HAS_BIGQUERY, HAS_RAZO
 from middleware.auth import SessionAuthMiddleware
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logger = logging.getLogger("grantbot")
+logger = logging.getLogger("sarthi_kalyan")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info(f"GrantBot starting — env={settings.env}")
+    logger.info(f"Sarthi Kalyan starting — env={settings.env}")
     logger.info(
         f"Capabilities — Gemini:{HAS_GEMINI} ChromaDB:{HAS_CHROMADB} "
         f"Firestore:{HAS_FIRESTORE} BigQuery:{HAS_BIGQUERY} Razorpay:{HAS_RAZORPAY}"
@@ -48,11 +48,11 @@ async def lifespan(app: FastAPI):
     if not HAS_GEMINI:
         logger.error("GEMINI_API_KEY is not set — the bot will not be able to match schemes.")
     yield
-    logger.info("GrantBot shutting down")
+    logger.info("Sarthi Kalyan shutting down")
 
 
 app = FastAPI(
-    title="GrantBot API",
+    title="Sarthi Kalyan API",
     description="AI-powered Indian government scheme discovery — web + WhatsApp",
     version="2.0.0",
     docs_url="/docs" if not settings.is_production else None,
@@ -156,7 +156,7 @@ async def stats():
 
     return {
         "headline": (
-            f"GrantBot has helped {unique_sessions} families discover "
+            f"Sarthi Kalyan has helped {unique_sessions} families discover "
             f"Rs {total_value:,} in potential government benefits"
         ),
         "unique_sessions": unique_sessions,

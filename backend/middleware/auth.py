@@ -24,7 +24,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from config import settings
 
-logger = logging.getLogger("grantbot.auth")
+logger = logging.getLogger("sarthi_kalyan.auth")
 
 EXCLUDED_PATHS = {
     "/health", "/stats", "/api/auth/session", "/api/auth/dev-login",
@@ -62,7 +62,7 @@ class SessionAuthMiddleware(BaseHTTPMiddleware):
         if request.url.path in EXCLUDED_PATHS:
             return await call_next(request)
 
-        token = request.cookies.get("grantbot_session")
+        token = request.cookies.get("sarthi_kalyan_session")
         if not token:
             return JSONResponse(status_code=401, content={"error": "Not authenticated", "code": "NO_SESSION"})
 

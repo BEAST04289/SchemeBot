@@ -52,9 +52,9 @@ async def test_dev_login(phone_suffix: str = "9876543210"):
         )
         assert resp.status_code == 200, f"Dev login failed: {resp.status_code} — {resp.text}"
         cookies = dict(resp.cookies)
-        assert "grantbot_session" in cookies, f"No session cookie returned: {cookies}"
+        assert "sarthi_kalyan_session" in cookies, f"No session cookie returned: {cookies}"
         print(f"✅ Dev login passed — session cookie set")
-        return cookies["grantbot_session"]
+        return cookies["sarthi_kalyan_session"]
 
 
 async def test_whatsapp_webhook(client: httpx.AsyncClient, phone_suffix: str, message: str):
@@ -114,7 +114,7 @@ async def test_web_match(session_token: str):
                 "has_aadhaar": True,
                 "language": "hi",
             },
-            cookies={"grantbot_session": session_token},
+            cookies={"sarthi_kalyan_session": session_token},
         )
         assert resp.status_code == 200, f"Match failed: {resp.status_code} — {resp.text[:300]}"
         data = resp.json()
@@ -127,7 +127,7 @@ async def test_web_match(session_token: str):
 
 async def main():
     print("=" * 60)
-    print("SchemeBot Smoke Test Suite")
+    print("Sarthi Kalyan Smoke Test Suite")
     print("=" * 60)
 
     all_passed = True

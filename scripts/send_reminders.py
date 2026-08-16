@@ -61,7 +61,7 @@ def send_whatsapp_reminder(phone_hash: str, scheme_id: str, deadline: str) -> bo
         client = Client(settings.twilio_sid, settings.twilio_token)
 
         message_body = (
-            f"🔔 GrantBot Reminder: आपकी योजना {scheme_id} की आवेदन "
+            f"🔔 Sarthi Kalyan Reminder: आपकी योजना {scheme_id} की आवेदन "
             f"अंतिम तिथि {deadline} है। जल्दी आवेदन करें!\n\n"
             f"Reminder: Deadline for {scheme_id} is {deadline}. Apply soon!"
         )

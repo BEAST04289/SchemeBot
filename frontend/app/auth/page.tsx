@@ -1,18 +1,37 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Phone, ArrowRight, ShieldCheck, RefreshCw, Landmark as GovernmentIcon, Languages } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Turnstile } from "@marsidev/react-turnstile";
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { Loader2, Phone, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { Landmark as GovernmentIcon } from "lucide-react";
 
 export default function AuthPage() {
   const router = useRouter();
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState('');
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState<"phone" | "otp">("phone");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [language, setLanguage] = useState<'en' | 'hi'>('hi');
+  const [error, setError] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [language, setLanguage] = useState<"en" | "hi">("hi");
+
+  useEffect(() => {
+    // Initialize Firebase Recaptcha (invisible) for Phone Auth
+    if (typeof window !== "undefined" && !window.recaptchaVerifier) {
+      try {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+          size: "invisible",
+        });
+      } catch (e) {
+        console.error("Recaptcha init failed", e);
+      }
+    }
+  }, []);
 
   const t = {
     govt: language === 'hi' ? '🇮🇳 भारत सरकार (GOVERNMENT OF INDIA)' : '🇮🇳 GOVERNMENT OF INDIA (भारत सरकार)',
@@ -20,63 +39,90 @@ export default function AuthPage() {
     subtitle: language === 'hi'
       ? 'सरकारी योजनाओं का लाभ उठाने के लिए अपना मोबाइल दर्ज करें।'
       : 'Enter your mobile to access welfare benefits.',
-    phoneLabel: language === 'hi' ? 'मोबाइल नंबर' : 'Mobile Number',
-    phonePlaceholder: language === 'hi' ? '98765 43210' : '98765 43210',
-    loginBtn: language === 'hi' ? 'लॉगिन करें' : 'Login',
-    errorMsg: language === 'hi'
-      ? 'कृपया एक मान्य 10-अंकीय मोबाइल नंबर दर्ज करें।'
-      : 'Please enter a valid 10-digit phone number.',
-    disclaimer: language === 'hi'
-      ? 'आगे बढ़कर आप नियमों से सहमत होते हैं। सुरक्षित डेटा एन्क्रिप्शन मानकों द्वारा समर्थित।'
-      : 'By continuing, you agree to secure data security guidelines.',
-    secure: language === 'hi' ? 'सुरक्षित प्रवेश' : 'Secure Entry',
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!otpSent) {
-      setOtpSent(true);
+    if (!turnstileToken && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
+      setError("Please complete the security check.");
       return;
     }
-    setError(null);
+    
+    const cleaned = phone.replace(/\D/g, "");
+    if (cleaned.length !== 10) {
+      setError("Please enter a valid 10-digit phone number.");
+      return;
+    }
+
     setLoading(true);
+    setError("");
 
     try {
-      const cleaned = phoneNumber.replace(/\D/g, '');
-      if (cleaned.length < 10) {
-        throw new Error(language === 'hi' ? 'कृपया एक वैध मोबाइल नंबर दर्ज करें।' : 'Please enter a valid mobile number.');
+      // Dev login bypass if we are running locally without Firebase keys
+      if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.NEXT_PUBLIC_FIREBASE_API_KEY === 'YOUR_FIREBASE_API_KEY') {
+        console.log("Using Dev Login Bypass");
+        const devRes = await fetch('/api/auth/dev-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: cleaned }),
+        });
+
+        if (devRes.ok) {
+          router.push('/dashboard');
+          return;
+        }
       }
 
-      // Dev mode fast-path: if Firebase isn't configured, bypass Turnstile
-      const devRes = await fetch('/api/auth/dev-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: cleaned, otp: otp }),
-      });
+      const formattedPhone = `+91${cleaned}`;
+      const appVerifier = window.recaptchaVerifier;
+      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+      setConfirmationResult(confirmation);
+      setStep("otp");
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Failed to send OTP. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      if (devRes.ok) {
-        router.push('/dashboard');
-        return;
-      }
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!confirmationResult) return;
 
-      // If dev-login is disabled (production), fall back to Firebase session
-      const sessionRes = await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+    if (otp.length !== 6) {
+      setError("Please enter a 6-digit OTP.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const result = await confirmationResult.confirm(otp);
+      const idToken = await result.user.getIdToken();
+
+      // POST to our backend to create a session
+      const res = await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id_token: cleaned,
-          turnstile_token: 'mock_turnstile_dev',
+          id_token: idToken,
+          turnstile_token: turnstileToken || "mock_token",
         }),
       });
 
-      const data = await sessionRes.json();
-      if (!sessionRes.ok) {
-        throw new Error(data.detail?.error || (language === 'hi' ? 'लॉगिन विफल रहा।' : 'Login failed.'));
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail?.error || "Authentication failed on server.");
       }
 
-      router.push('/dashboard');
+      // Success, redirect to dashboard
+      router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message || (language === 'hi' ? 'एक त्रुटि हुई।' : 'An error occurred.'));
+      console.error(err);
+      setError(err.message || "Invalid OTP or session failed.");
+    } finally {
       setLoading(false);
     }
   };
@@ -132,86 +178,119 @@ export default function AuthPage() {
           </div>
 
           {error && (
-            <div className="p-3.5 rounded-lg bg-red-50 text-red-600 border border-red-200 text-xs font-bold leading-relaxed">
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 border border-red-100 font-semibold">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div className="space-y-2">
-              <label htmlFor="phone" className="text-[10px] font-bold text-navy uppercase block mb-1">
-                {t.phoneLabel}
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-slate-400 font-semibold text-sm">+91</span>
-                  <div className="h-4 w-[1px] bg-slate-200 ml-2"></div>
+          {step === "phone" ? (
+            <form onSubmit={handleSendOtp} className="space-y-6">
+              <div>
+                <label className="block text-xs font-bold text-navy uppercase mb-2">Phone Number</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                    <Phone className="w-5 h-5" />
+                  </div>
+                  <span className="absolute inset-y-0 left-10 flex items-center text-slate-500 font-bold">
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                    placeholder="99999 99999"
+                    className="w-full pl-20 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-saffron focus:border-saffron outline-none transition text-navy font-semibold text-sm"
+                    disabled={loading}
+                    maxLength={10}
+                  />
                 </div>
-                <input
-                  type="tel"
-                  placeholder={t.phonePlaceholder}
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
-                  disabled={otpSent}
-                  className="w-full pl-12 pr-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-saffron/30 focus:border-saffron text-sm font-semibold transition-all text-navy bg-white disabled:opacity-50"
-                  autoComplete="tel"
-                  inputMode="numeric"
-                  required
-                />
               </div>
-            </div>
 
-            {otpSent && (
-              <div className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <label className="text-[10px] font-bold text-navy uppercase tracking-wider block">
-                  {language === 'hi' ? 'OTP दर्ज करें / ENTER OTP' : 'ENTER OTP'}
-                </label>
+              <div className="flex justify-center my-4 min-h-[65px]">
+                {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY !== '1x00000000000000000000AA' && (
+                  <Turnstile
+                    siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                    onSuccess={(token) => setTurnstileToken(token)}
+                    onError={() => setError("Security check failed. Please refresh.")}
+                  />
+                )}
+                {(!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY === '1x00000000000000000000AA') && (
+                   <div className="flex items-center justify-center space-x-2 bg-slate-50 p-3 rounded-xl border border-slate-200 w-full">
+                     <ShieldCheck className="w-4 h-4 text-tricolorgreen" />
+                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
+                       Dev Mode Auth Bypass Active
+                     </span>
+                   </div>
+                )}
+              </div>
+              
+              <div id="recaptcha-container"></div>
+
+              <button
+                type="submit"
+                disabled={loading || (!!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY !== '1x00000000000000000000AA' && !turnstileToken)}
+                className="w-full bg-saffron text-white py-3 px-4 rounded-lg font-bold hover:bg-saffron-dark transition flex justify-center items-center gap-2 disabled:opacity-50 uppercase tracking-wider text-xs"
+              >
+                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {loading ? "Sending OTP..." : "Get OTP"}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtp} className="space-y-6">
+              <div className="text-center mb-6">
+                <p className="text-sm text-slate-600">
+                  Enter the 6-digit code sent to <br />
+                  <span className="font-bold text-navy">+91 {phone}</span>
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-navy uppercase mb-2 text-center">One Time Password</label>
                 <input
                   type="text"
-                  placeholder="000000"
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-saffron focus:outline-none focus:ring-2 focus:ring-saffron/30 focus:border-saffron text-sm font-mono font-bold transition-all text-navy bg-white"
-                  inputMode="numeric"
-                  required
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                  placeholder="• • • • • •"
+                  className="w-full text-center tracking-[0.5em] text-2xl py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-saffron focus:border-saffron outline-none transition text-navy"
+                  disabled={loading}
+                  maxLength={6}
                 />
               </div>
-            )}
 
-            {/* Security Badge (replaces Turnstile in dev) */}
-            <div className="flex items-center justify-center space-x-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
-              <ShieldCheck className="w-4 h-4 text-tricolorgreen" />
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-                {t.secure}
-              </span>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full inline-flex items-center justify-center py-3 px-4 text-xs font-bold text-white bg-saffron hover:bg-saffron-dark rounded-lg shadow disabled:opacity-50 disabled:cursor-not-allowed transition-all uppercase tracking-wider cursor-pointer"
-            >
-              {loading ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  {language === 'hi' ? 'कृपया प्रतीक्षा करें...' : 'Please wait...'}
-                </>
-              ) : (
-                <>
-                  {otpSent ? (language === 'hi' ? 'लॉगिन करें' : 'Verify & Login') : t.loginBtn}
-                  <ArrowRight className="w-4 h-4 ml-1.5" />
-                </>
-              )}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={loading || otp.length !== 6}
+                className="w-full bg-saffron text-white py-3 rounded-lg font-bold hover:bg-saffron-dark transition flex justify-center items-center gap-2 disabled:opacity-50 uppercase tracking-wider text-xs"
+              >
+                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {loading ? "Verifying..." : "Verify & Login"}
+              </button>
+              
+              <div className="text-center mt-4">
+                <button 
+                  type="button" 
+                  onClick={() => { setStep("phone"); setOtp(""); }}
+                  className="text-xs font-semibold text-slate-500 hover:text-navy transition"
+                >
+                  Change phone number
+                </button>
+              </div>
+            </form>
+          )}
 
           <div className="text-center border-t border-slate-100 pt-4">
             <p className="text-slate-400 text-[9px] leading-relaxed font-medium">
-              {t.disclaimer}
+              By continuing, you agree to secure data security guidelines.
             </p>
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+declare global {
+  interface Window {
+    recaptchaVerifier: any;
+  }
 }

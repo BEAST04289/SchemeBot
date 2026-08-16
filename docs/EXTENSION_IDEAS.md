@@ -1,4 +1,4 @@
-# GrantBot — Extension Ideas
+# Sarthi Kalyan — Extension Ideas
 
 All optional. None required for the XPRIZE submission. Ordered by when
 they're actually worth building, not by how interesting they sound.

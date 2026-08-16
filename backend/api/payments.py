@@ -14,7 +14,7 @@ from utils.razorpay import create_order, verify_payment_signature
 from db.firestore import upgrade_user_tier
 from db.bigquery import log_event
 
-logger = logging.getLogger("grantbot.payments")
+logger = logging.getLogger("sarthi_kalyan.payments")
 router = APIRouter()
 
 

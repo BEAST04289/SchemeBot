@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter
 from db.bigquery import read_local_logs
 
-logger = logging.getLogger("grantbot.impact")
+logger = logging.getLogger("sarthi_kalyan.impact")
 router = APIRouter()
 
 
@@ -58,7 +58,7 @@ async def impact_summary():
 
     return {
         "headline": (
-            f"GrantBot has helped {len(matched_sessions)} families discover "
+            f"Sarthi Kalyan has helped {len(matched_sessions)} families discover "
             f"Rs {total_benefit:,} in potential government benefits"
         ),
         "evidence": {

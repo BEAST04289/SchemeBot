@@ -3,7 +3,7 @@ Admin API — NGO Dashboard Routes
 ===================================
 Requires tier="ngo" — regular users cannot access these.
 Provides bulk client management and aggregated impact stats
-for NGO partners who use GrantBot to serve their beneficiaries.
+for NGO partners who use Sarthi Kalyan to serve their beneficiaries.
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from pydantic import BaseModel, ConfigDict
 from db.firestore import check_trial_status, get_tracked_schemes
 from db.bigquery import log_event, read_local_logs
 
-logger = logging.getLogger("grantbot.admin")
+logger = logging.getLogger("sarthi_kalyan.admin")
 router = APIRouter()
 
 

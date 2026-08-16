@@ -34,5 +34,5 @@ tail -3 backend/logs/agent_logs.jsonl
 *(Requires Shaurya to have GCP billing enabled and `gcloud` authenticated)*
 ```bash
 cd backend
-gcloud run deploy grantbot-backend --source . --region asia-south1 --allow-unauthenticated --min-instances 0 --max-instances 5 --memory 1Gi --set-env-vars ENV=production,GEMINI_API_KEY=$GEMINI_API_KEY
+gcloud run deploy sarthi_kalyan-backend --source . --region asia-south1 --allow-unauthenticated --min-instances 0 --max-instances 5 --memory 1Gi --set-env-vars ENV=production,GEMINI_API_KEY=$GEMINI_API_KEY
 ```

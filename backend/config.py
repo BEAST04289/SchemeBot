@@ -1,5 +1,5 @@
 """
-GrantBot — Central Configuration & Capability Detection
+Sarthi Kalyan — Central Configuration & Capability Detection
 =========================================================
 THIS IS THE FLEXIBILITY MECHANISM for the whole system.
 
@@ -36,7 +36,7 @@ from dotenv import load_dotenv
 _env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(_env_path)
 
-logger = logging.getLogger("grantbot.config")
+logger = logging.getLogger("sarthi_kalyan.config")
 
 
 @dataclass
@@ -154,7 +154,7 @@ if settings.is_production:
         raise RuntimeError(f"Production mode requires these but they are not configured: {_missing}")
 
 logger.info(
-    f"GrantBot capabilities [env={settings.env}] — "
+    f"Sarthi Kalyan capabilities [env={settings.env}] — "
     f"Gemini:{HAS_GEMINI} ChromaDB:{HAS_CHROMADB} Firestore:{HAS_FIRESTORE} "
     f"BigQuery:{HAS_BIGQUERY} Razorpay:{HAS_RAZORPAY}"
 )

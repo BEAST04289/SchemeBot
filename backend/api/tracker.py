@@ -20,7 +20,7 @@ from pydantic import BaseModel, ConfigDict
 from db.firestore import get_tracked_schemes
 from db.bigquery import log_event
 
-logger = logging.getLogger("grantbot.tracker")
+logger = logging.getLogger("sarthi_kalyan.tracker")
 router = APIRouter()
 
 VALID_STATUSES = {"not_started", "documents_collected", "applied", "approved", "rejected"}

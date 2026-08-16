@@ -23,7 +23,7 @@ import razorpay
 
 from config import settings, HAS_RAZORPAY
 
-logger = logging.getLogger("grantbot.razorpay")
+logger = logging.getLogger("sarthi_kalyan.razorpay")
 
 _client = None
 

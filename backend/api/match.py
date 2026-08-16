@@ -18,7 +18,7 @@ from agents.eligibility import run_eligibility_agent_web
 from db.firestore import check_trial_status, consume_trial
 from db.bigquery import log_event
 
-logger = logging.getLogger("grantbot.match_api")
+logger = logging.getLogger("sarthi_kalyan.match_api")
 router = APIRouter()
 
 

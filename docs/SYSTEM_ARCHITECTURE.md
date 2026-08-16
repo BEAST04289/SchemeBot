@@ -1,4 +1,4 @@
-# GrantBot — System Architecture
+# Sarthi Kalyan — System Architecture
 
 ## The core design decision
 

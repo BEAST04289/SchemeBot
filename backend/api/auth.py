@@ -2,7 +2,7 @@
 Auth Routes
 ============
 POST /api/auth/session — exchanges a Firebase phone-OTP ID token plus a
-Cloudflare Turnstile token for a GrantBot session (httpOnly JWT cookie).
+Cloudflare Turnstile token for a Sarthi Kalyan session (httpOnly JWT cookie).
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from config import settings, HAS_FIRESTORE
 from middleware.auth import create_session_jwt
 from db.firestore import hash_phone
 
-logger = logging.getLogger("grantbot.auth_api")
+logger = logging.getLogger("sarthi_kalyan.auth_api")
 router = APIRouter()
 
 
@@ -77,7 +77,7 @@ async def dev_login(body: DevLoginRequest, response: Response):
     session_jwt = create_session_jwt(phone_hash)
 
     response.set_cookie(
-        key="grantbot_session",
+        key="sarthi_kalyan_session",
         value=session_jwt,
         httponly=True,
         secure=False,
@@ -101,7 +101,7 @@ async def create_session(body: SessionRequest, response: Response):
     session_jwt = create_session_jwt(phone_hash)
 
     response.set_cookie(
-        key="grantbot_session",
+        key="sarthi_kalyan_session",
         value=session_jwt,
         httponly=True,
         secure=settings.is_production,
@@ -113,6 +113,6 @@ async def create_session(body: SessionRequest, response: Response):
 
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie("grantbot_session")
+    response.delete_cookie("sarthi_kalyan_session")
     return {"success": True}
 

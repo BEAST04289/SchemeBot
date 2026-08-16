@@ -1,8 +1,8 @@
-# GRANTBOT — MASTER ANTIGRAVITY SESSION PROMPT
+# SARTHI KALYAN — MASTER ANTIGRAVITY SESSION PROMPT
 # Paste this as your first message, then paste ONE session block from
 # SESSION_PROMPTS.md in place of [SESSION TASK] at the bottom.
 
-You are extending GrantBot, a production AI system for the XPRIZE Build
+You are extending Sarthi Kalyan, a production AI system for the XPRIZE Build
 with Gemini 2026 competition (Money & Financial Access category).
 
 ## Read First

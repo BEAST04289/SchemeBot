@@ -1,4 +1,4 @@
-# GrantBot — Remaining Antigravity Sessions
+# Sarthi Kalyan — Remaining Antigravity Sessions
 # Backend core is real code (see AGENTS.md). These sessions cover what's
 # still needed. Paste the relevant SESSION block into Antigravity along
 # with a note: "Read AGENTS.md and the existing backend/ files first."

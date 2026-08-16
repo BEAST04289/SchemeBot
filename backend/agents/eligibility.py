@@ -50,7 +50,7 @@ if HAS_GEMINI:
 
 FLASH_JSON = genai.GenerativeModel(
     "gemini-3.5-flash-lite",
-    generation_config=genai.GenerationConfig(temperature=0.1, response_mime_type="application/json"),
+    generation_config=genai.GenerationConfig(temperature=0.1, response_mime_type="application/json", max_output_tokens=800),
 ) if HAS_GEMINI else None
 
 FLASH = genai.GenerativeModel(
