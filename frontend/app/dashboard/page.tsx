@@ -139,20 +139,26 @@ export default function Dashboard() {
     if (seed) {
       return {
         scheme_id: seed.id,
-        name: { en: seed.name || seed.id, hi: seed.name_hindi || seed.name || seed.id },
-        ministry: { en: seed.ministry || 'Government Welfare', hi: seed.ministry || 'कल्याण विभाग' },
-        benefit_description: { en: seed.benefit || seed.plain_language_summary || '', hi: seed.benefit_hindi || seed.benefit || '' },
+        name: seed.name || seed.id,
+        name_hi: seed.name_hindi || seed.name || seed.id,
+        ministry: seed.ministry || 'Government Welfare',
+        benefit_amount: seed.benefit || seed.plain_language_summary || '',
         documents_required: seed.documents || [],
-        apply_url: seed.apply_url || ''
+        application_url: seed.apply_url || '',
+        annual_value: seed.annual_value || 0,
+        confidence_score: 0,
       };
     }
     return {
       scheme_id: schemeId,
-      name: { en: schemeId.replace(/_/g, ' ').toUpperCase(), hi: schemeId },
-      ministry: { en: 'Government Welfare', hi: 'कल्याण विभाग' },
-      benefit_description: { en: 'Determined on Apply', hi: 'लागू करने पर निर्धारित' },
+      name: schemeId.replace(/_/g, ' ').toUpperCase(),
+      name_hi: schemeId,
+      ministry: 'Government Welfare',
+      benefit_amount: 'Determined on Apply',
       documents_required: [],
-      apply_url: ''
+      application_url: '',
+      annual_value: 0,
+      confidence_score: 0,
     };
   };
 
@@ -1011,13 +1017,13 @@ export default function Dashboard() {
                       <span className="px-2 py-0.5 bg-saffron/10 text-saffron rounded-full">किसान योजना / Farmer Scheme</span>
                       <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full">भारत सरकार द्वारा संचालित / Govt of India</span>
                     </div>
-                    <h3 className="font-black text-sm text-navy">{selectedScheme.name.hi} / {selectedScheme.name.en}</h3>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase">{selectedScheme.ministry.hi} / {selectedScheme.ministry.en}</p>
+                    <h3 className="font-black text-sm text-navy">{selectedScheme.name_hi || selectedScheme.name} / {selectedScheme.name}</h3>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">{selectedScheme.ministry}</p>
                   </div>
 
                   <div className="flex space-x-2">
                     <button 
-                      onClick={() => { setSuccessSchemeName(selectedScheme.name.hi); setActivePanel('success'); }}
+                      onClick={() => { setSuccessSchemeName(selectedScheme.name_hi || selectedScheme.name); setActivePanel('success'); }}
                       className="py-1.5 px-3 bg-saffron hover:bg-saffron-dark text-white font-bold rounded-lg text-[9px] uppercase tracking-wider shadow transition-all cursor-pointer"
                     >
                       अभी आवेदन करें / Apply Now
@@ -1337,7 +1343,7 @@ export default function Dashboard() {
                     onSubmit={async (e) => {
                       e.preventDefault();
                       if (!chatInput.trim() || isLoading) return;
-                      const newMessages = [...messages, { role: 'user', content: chatInput }];
+                      const newMessages: Message[] = [...messages, { role: 'user' as const, content: chatInput }];
                       setMessages(newMessages);
                       setChatInput('');
                       setIsLoading(true);
@@ -1358,10 +1364,10 @@ export default function Dashboard() {
                           const errMsg = res.status === 401 
                             ? 'Your session has expired. Please refresh the page or log in again.\n\nआपका सत्र समाप्त हो गया है। कृपया पेज रीफ्रेश करें।'
                             : (err.detail?.error || 'Error connecting to assistant.');
-                          setMessages([...newMessages, { role: 'assistant', content: errMsg }]);
+                          setMessages([...newMessages, { role: 'assistant' as const, content: errMsg }]);
                         }
                       } catch (err) {
-                        setMessages([...newMessages, { role: 'assistant', content: 'Connection error. Please check your internet.\n\nकनेक्शन त्रुटि। कृपया अपना इंटरनेट जांचें।' }]);
+                        setMessages([...newMessages, { role: 'assistant' as const, content: 'Connection error. Please check your internet.\n\nकनेक्शन त्रुटि। कृपया अपना इंटरनेट जांचें।' }]);
                       } finally {
                         setIsLoading(false);
                       }

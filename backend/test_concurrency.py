@@ -12,6 +12,11 @@ import asyncio
 import sys
 import httpx
 
+# Fix Windows console encoding (cp1252 can't render emoji)
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 
 BASE_URL = "http://localhost:8000"
 
